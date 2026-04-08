@@ -184,42 +184,45 @@ export default function WorkReportPage() {
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>株数</Label>
-                    <SliderInput
-                      value={plantCount}
-                      onChange={setPlantCount}
-                      min={0}
-                      max={150}
-                      step={1}
-                      unit="株"
-                      decimal={0}
-                    />
-                  </div>
-                  <div>
-                    <Label>3F</Label>
-                    <SliderInput
-                      value={plantCount3f}
-                      onChange={setPlantCount3f}
-                      min={0}
-                      max={50}
-                      step={1}
-                      unit="株"
-                      decimal={0}
-                    />
-                  </div>
-                  <div>
-                    <Label>5F</Label>
-                    <SliderInput
-                      value={plantCount5f}
-                      onChange={setPlantCount5f}
-                      min={0}
-                      max={50}
-                      step={1}
-                      unit="株"
-                      decimal={0}
-                    />
+                <div>
+                  <Label>株数</Label>
+                  <SliderInput
+                    value={plantCount}
+                    onChange={setPlantCount}
+                    min={0}
+                    max={150}
+                    step={1}
+                    unit="株"
+                    decimal={0}
+                  />
+                </div>
+                <div>
+                  <Label>内訳</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>3F</Label>
+                      <SliderInput
+                        value={plantCount3f}
+                        onChange={setPlantCount3f}
+                        min={0}
+                        max={50}
+                        step={1}
+                        unit="株"
+                        decimal={0}
+                      />
+                    </div>
+                    <div>
+                      <Label>5F</Label>
+                      <SliderInput
+                        value={plantCount5f}
+                        onChange={setPlantCount5f}
+                        min={0}
+                        max={50}
+                        step={1}
+                        unit="株"
+                        decimal={0}
+                      />
+                    </div>
                   </div>
                 </div>
               </>
