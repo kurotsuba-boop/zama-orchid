@@ -1,101 +1,242 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase'
+import { useEmployees } from '@/hooks/useEmployees'
+import { useWorkMaster, useLocationMaster } from '@/hooks/useMaster'
+import Chip from '@/components/Chip'
+import SliderInput from '@/components/SliderInput'
+import SelectField from '@/components/SelectField'
+import Label from '@/components/Label'
+import DatePicker from '@/components/DatePicker'
+import ConfirmModal from '@/components/ConfirmModal'
+import SuccessOverlay from '@/components/SuccessOverlay'
+
+function getToday() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function getNow() {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+export default function WorkReportPage() {
+  const { employees } = useEmployees()
+  const { data: workTypes } = useWorkMaster()
+  const { data: locations } = useLocationMaster()
+  const workA = workTypes.filter((w) => w.category === 'A')
+  const workB = workTypes.filter((w) => w.category === 'B')
+  const [date, setDate] = useState(getToday)
+  const [time, setTime] = useState(getNow)
+  const [empId, setEmpId] = useState('')
+  const [workType, setWorkType] = useState('')
+  const [workCategory, setWorkCategory] = useState<'A' | 'B' | ''>('')
+  const [hours, setHours] = useState(3.0)
+  const [location, setLocation] = useState('')
+  const [plantCount, setPlantCount] = useState(30)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  const isA = workCategory === 'A'
+  const canSubmit = empId && workType && hours > 0 && (!isA || location)
+
+  const selectWork = (label: string, category: 'A' | 'B') => {
+    setWorkType(label)
+    setWorkCategory(category)
+    setLocation('')
+  }
+
+  const reset = () => {
+    setDate(getToday())
+    setTime(getNow())
+    setEmpId('')
+    setWorkType('')
+    setWorkCategory('')
+    setHours(3.0)
+    setLocation('')
+    setPlantCount(30)
+  }
+
+  const handleSubmit = async () => {
+    setShowConfirm(false)
+    const supabase = createClient()
+    const { error } = await supabase.from('work_reports').insert({
+      reported_at: `${date}T${time}:00+09:00`,
+      employee_id: empId,
+      work_type: workType,
+      work_category: workCategory,
+      hours,
+      location: isA ? location : null,
+      plant_count: isA ? plantCount : null,
+    })
+    if (error) {
+      alert('登録に失敗しました: ' + error.message)
+      return
+    }
+    setShowSuccess(true)
+  }
+
+  const empName = employees.find((e) => e.id === empId)?.name || ''
+  const confirmLines = [
+    `${date} ${time}`,
+    empName,
+    `${workType}　${hours.toFixed(1)}h`,
+    ...(isA ? [`${location}　${plantCount}株`] : []),
+  ]
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex gap-8 h-full" style={{ animation: 'fadeIn 0.3s' }}>
+      {/* 左カラム: 入力 */}
+      <div
+        className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3"
+        style={{ maxHeight: 'calc(100vh - 100px)' }}
+      >
+        <div>
+          <Label>担当氏名</Label>
+          <SelectField
+            value={empId}
+            onChange={setEmpId}
+            options={employees.map((e) => ({ id: e.id, name: e.name }))}
+            placeholder="名前を選択してください"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <Label>日付</Label>
+            <DatePicker value={date} onChange={setDate} />
+          </div>
+          <div className="w-40">
+            <Label>時刻</Label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full px-5 py-4 text-lg rounded-xl focus:outline-none"
+              style={{ background: '#ffffff', color: '#1f2937', border: '1.5px solid #e5e7eb' }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>仕立て作業</Label>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {workA.map((w) => (
+              <Chip
+                key={w.id}
+                label={w.label}
+                active={workType === w.label}
+                onClick={() => selectWork(w.label, 'A')}
+                size="lg"
+              />
+            ))}
+          </div>
+          <Label>その他作業</Label>
+          <div className="flex flex-wrap gap-2">
+            {workB.map((w) => (
+              <Chip
+                key={w.id}
+                label={w.label}
+                active={workType === w.label}
+                onClick={() => selectWork(w.label, 'B')}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 右カラム: 詳細パネル + 登録ボタン */}
+      <div className="w-[450px] flex flex-col gap-5 flex-shrink-0">
+        {workType ? (
+          <div
+            className="flex-1 rounded-2xl p-7 flex flex-col gap-6"
+            style={{
+              background: '#faf6ed',
+              border: '1.5px solid #e8dcc3',
+              animation: 'slideUp 0.2s',
+            }}
+          >
+            <div>
+              <Label>{isA ? '仕立て時間' : '作業時間'}</Label>
+              <SliderInput value={hours} onChange={setHours} />
+            </div>
+            {isA && (
+              <>
+                <div>
+                  <Label>場所</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {locations.map((l) => (
+                      <Chip
+                        key={l.id}
+                        label={l.label}
+                        active={location === l.label}
+                        onClick={() => setLocation(l.label)}
+                        size="lg"
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>株数</Label>
+                  <SliderInput
+                    value={plantCount}
+                    onChange={setPlantCount}
+                    min={0}
+                    max={150}
+                    step={1}
+                    unit="株"
+                    decimal={0}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div
+            className="flex-1 rounded-2xl flex items-center justify-center"
+            style={{ border: '2px dashed #e5e7eb' }}
+          >
+            <div className="text-center">
+              <p className="text-4xl mb-3">👈</p>
+              <p className="text-base" style={{ color: '#9ca3af' }}>
+                作業内容を選択
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button
+          disabled={!canSubmit}
+          onClick={() => setShowConfirm(true)}
+          className="py-6 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25"
+          style={{
+            background: canSubmit ? '#b8963e' : '#e5e7eb',
+            boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
+          }}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          登録する
+        </button>
+      </div>
+
+      {showConfirm && (
+        <ConfirmModal
+          lines={confirmLines}
+          onOk={handleSubmit}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+      {showSuccess && (
+        <SuccessOverlay
+          emoji="🌸"
+          message="お疲れ様でした！"
+          onDone={() => {
+            setShowSuccess(false)
+            reset()
+          }}
+        />
+      )}
     </div>
-  );
+  )
 }
