@@ -51,13 +51,16 @@ export default function LossReportPage() {
     reason: string,
     value: number
   ) => {
-    setLossData((prev) => ({
-      ...prev,
-      [variety]: {
-        ...prev[variety],
-        [type]: { ...prev[variety][type], [reason]: value },
-      },
-    }))
+    setLossData((prev) => {
+      const existing = prev[variety] || { discard: {}, downgrade: {} }
+      return {
+        ...prev,
+        [variety]: {
+          ...existing,
+          [type]: { ...existing[type], [reason]: value },
+        },
+      }
+    })
   }
 
   const getLossValue = (variety: string, type: 'discard' | 'downgrade', reason: string) => {
