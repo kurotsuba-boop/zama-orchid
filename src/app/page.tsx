@@ -171,8 +171,8 @@ export default function WorkReportPage() {
             {isA && (
               <>
                 <div>
-                  <Label>場所</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#9ca3af' }}>場所</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {locations.map((l) => (
                       <Chip
                         key={l.id}
