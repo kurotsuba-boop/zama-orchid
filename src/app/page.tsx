@@ -154,10 +154,10 @@ export default function WorkReportPage() {
       </div>
 
       {/* 右カラム: 詳細パネル + 登録ボタン */}
-      <div className="w-[450px] flex flex-col gap-5 flex-shrink-0">
+      <div className="w-[450px] h-full flex flex-col justify-between flex-shrink-0">
         {workType ? (
           <div
-            className="flex-1 rounded-2xl p-7 flex flex-col gap-6"
+            className="flex-1 rounded-2xl p-5 flex flex-col justify-between"
             style={{
               background: '#faf6ed',
               border: '1.5px solid #e8dcc3',
@@ -166,7 +166,7 @@ export default function WorkReportPage() {
           >
             <div>
               <Label>{isA ? '仕立て時間' : '作業時間'}</Label>
-              <SliderInput value={hours} onChange={setHours} />
+              <SliderInput value={hours} onChange={setHours} showTicks={false} tight />
             </div>
             {isA && (
               <>
@@ -179,13 +179,12 @@ export default function WorkReportPage() {
                         label={l.label}
                         active={location === l.label}
                         onClick={() => setLocation(l.label)}
-                        size="lg"
                       />
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>株数</p>
+                  <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>株数</p>
                   <SliderInput
                     value={plantCount}
                     onChange={setPlantCount}
@@ -195,37 +194,40 @@ export default function WorkReportPage() {
                     unit="株"
                     decimal={0}
                     size="large"
+                    showTicks={false}
+                    tight
                   />
                 </div>
-                <div>
-                  <Label>内訳</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>3F</p>
-                      <SliderInput
-                        value={plantCount3f}
-                        onChange={setPlantCount3f}
-                        min={0}
-                        max={50}
-                        step={1}
-                        unit="株"
-                        decimal={0}
-                        size="large"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>5F</p>
-                      <SliderInput
-                        value={plantCount5f}
-                        onChange={setPlantCount5f}
-                        min={0}
-                        max={50}
-                        step={1}
-                        unit="株"
-                        decimal={0}
-                        size="large"
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>3F</p>
+                    <SliderInput
+                      value={plantCount3f}
+                      onChange={setPlantCount3f}
+                      min={0}
+                      max={50}
+                      step={1}
+                      unit="株"
+                      decimal={0}
+                      size="large"
+                      showTicks={false}
+                      tight
+                    />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>5F</p>
+                    <SliderInput
+                      value={plantCount5f}
+                      onChange={setPlantCount5f}
+                      min={0}
+                      max={50}
+                      step={1}
+                      unit="株"
+                      decimal={0}
+                      size="large"
+                      showTicks={false}
+                      tight
+                    />
                   </div>
                 </div>
               </>
@@ -248,7 +250,7 @@ export default function WorkReportPage() {
         <button
           disabled={!canSubmit}
           onClick={() => setShowConfirm(true)}
-          className="py-6 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25"
+          className="py-4 mt-2 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25"
           style={{
             background: canSubmit ? '#b8963e' : '#e5e7eb',
             boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',

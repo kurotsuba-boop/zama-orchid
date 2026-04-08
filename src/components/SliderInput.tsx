@@ -9,6 +9,8 @@ type SliderInputProps = {
   unit?: string
   decimal?: number
   size?: 'default' | 'compact' | 'large'
+  showTicks?: boolean
+  tight?: boolean
 }
 
 export default function SliderInput({
@@ -20,6 +22,8 @@ export default function SliderInput({
   unit = 'h',
   decimal = 1,
   size = 'default',
+  showTicks = true,
+  tight = false,
 }: SliderInputProps) {
   const pct = ((value - min) / (max - min)) * 100
   const valueCls = size === 'compact' ? 'text-xl' : size === 'large' ? 'text-6xl' : 'text-5xl'
@@ -27,7 +31,7 @@ export default function SliderInput({
 
   return (
     <div>
-      <div className="text-center mb-2">
+      <div className={`text-center ${tight ? 'mb-1' : 'mb-2'}`}>
         <span
           className={`${valueCls} font-bold`}
           style={{ color: '#b8963e', fontFamily: "'DM Mono', monospace" }}
@@ -52,11 +56,13 @@ export default function SliderInput({
           borderRadius: '3px',
         }}
       />
-      <div className="flex justify-between mt-2 text-xs" style={{ color: '#9ca3af' }}>
-        {[0, 0.25, 0.5, 0.75, 1].map((r) => (
-          <span key={r}>{Math.round(min + (max - min) * r)}</span>
-        ))}
-      </div>
+      {showTicks && (
+        <div className="flex justify-between mt-2 text-xs" style={{ color: '#9ca3af' }}>
+          {[0, 0.25, 0.5, 0.75, 1].map((r) => (
+            <span key={r}>{Math.round(min + (max - min) * r)}</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
