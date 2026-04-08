@@ -185,7 +185,7 @@ export default function WorkReportPage() {
                   </div>
                 </div>
                 <div>
-                  <Label>株数</Label>
+                  <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>株数</p>
                   <SliderInput
                     value={plantCount}
                     onChange={setPlantCount}
@@ -194,13 +194,14 @@ export default function WorkReportPage() {
                     step={1}
                     unit="株"
                     decimal={0}
+                    size="large"
                   />
                 </div>
                 <div>
                   <Label>内訳</Label>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>3F</Label>
+                      <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>3F</p>
                       <SliderInput
                         value={plantCount3f}
                         onChange={setPlantCount3f}
@@ -209,10 +210,11 @@ export default function WorkReportPage() {
                         step={1}
                         unit="株"
                         decimal={0}
+                        size="large"
                       />
                     </div>
                     <div>
-                      <Label>5F</Label>
+                      <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>5F</p>
                       <SliderInput
                         value={plantCount5f}
                         onChange={setPlantCount5f}
@@ -221,6 +223,7 @@ export default function WorkReportPage() {
                         step={1}
                         unit="株"
                         decimal={0}
+                        size="large"
                       />
                     </div>
                   </div>
