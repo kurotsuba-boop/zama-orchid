@@ -8,6 +8,7 @@ type SliderInputProps = {
   step?: number
   unit?: string
   decimal?: number
+  size?: 'default' | 'compact'
 }
 
 export default function SliderInput({
@@ -18,19 +19,21 @@ export default function SliderInput({
   step = 0.5,
   unit = 'h',
   decimal = 1,
+  size = 'default',
 }: SliderInputProps) {
   const pct = ((value - min) / (max - min)) * 100
+  const isCompact = size === 'compact'
 
   return (
     <div>
       <div className="text-center mb-2">
         <span
-          className="text-5xl font-bold"
+          className={`${isCompact ? 'text-xl' : 'text-5xl'} font-bold`}
           style={{ color: '#b8963e', fontFamily: "'DM Mono', monospace" }}
         >
           {decimal > 0 ? value.toFixed(decimal) : value}
         </span>
-        <span className="text-lg ml-2" style={{ color: '#9ca3af' }}>
+        <span className={`${isCompact ? 'text-xs' : 'text-lg'} ml-1`} style={{ color: '#9ca3af' }}>
           {unit}
         </span>
       </div>
