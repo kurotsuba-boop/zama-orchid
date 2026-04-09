@@ -1,17 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 const TABS = [
-  { id: '/', label: '作業報告', icon: '📋' },
-  { id: '/loss', label: 'ロス報告', icon: '⚠️' },
-  { id: '/timecard', label: 'タイムカード', icon: '⏰' },
-  { id: '/analytics', label: '分析', icon: '📊' },
+  { id: 'work', label: '作業報告', icon: '📋' },
+  { id: 'loss', label: 'ロス報告', icon: '⚠️' },
+  { id: 'timecard', label: 'タイムカード', icon: '⏰' },
+  { id: 'analytics', label: '分析', icon: '📊' },
 ]
 
-export default function Header() {
-  const pathname = usePathname()
+type HeaderProps = {
+  activeTab: string
+  onTabChange: (tab: string) => void
+}
+
+export default function Header({ activeTab, onTabChange }: HeaderProps) {
   const router = useRouter()
   const [clock, setClock] = useState('')
 
@@ -49,10 +53,10 @@ export default function Header() {
         {TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => router.push(t.id)}
+            onClick={() => onTabChange(t.id)}
             className="flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-bold transition-all duration-200 active:scale-95"
             style={
-              pathname === t.id
+              activeTab === t.id
                 ? { background: '#b8963e', color: '#fff', boxShadow: '0 2px 12px rgba(184,150,62,0.3)' }
                 : { background: 'transparent', color: '#9ca3af' }
             }
@@ -70,10 +74,7 @@ export default function Header() {
         <button
           onClick={() => router.push('/admin')}
           className="flex items-center justify-center w-9 h-9 rounded-lg transition-all active:scale-90"
-          style={{
-            background: pathname === '/admin' ? '#faf6ed' : 'transparent',
-            border: pathname === '/admin' ? '1px solid #e8dcc3' : '1px solid transparent',
-          }}
+          style={{ background: 'transparent', border: '1px solid transparent' }}
           title="設定"
         >
           <span className="text-lg">⚙️</span>
