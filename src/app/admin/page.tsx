@@ -18,6 +18,216 @@ import type {
   LossReasonMaster,
 } from '@/lib/types'
 
+// ── CSV ユーティリティ ──
+function downloadCsv(filename: string, rows: string[][]) {
+  const bom = '\uFEFF'
+  const csv = rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function getToday() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function getMonthStart() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+function formatTime(iso: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+const outlineGoldBtn = {
+  background: '#ffffff',
+  color: '#b8963e',
+  border: '1.5px solid #b8963e',
+}
+
+// ── CSV ダウンロードパネル ──
+function CsvWorkReport() {
+  const supabase = createClient()
+  const [from, setFrom] = useState(getMonthStart)
+  const [to, setTo] = useState(getToday)
+  const [loading, setLoading] = useState(false)
+
+  const download = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('work_reports')
+      .select('reported_at, employee_id, work_type, work_category, hours, location, plant_count, plant_count_3f, plant_count_5f, employees(name)')
+      .gte('reported_at', `${from}T00:00:00+09:00`)
+      .lte('reported_at', `${to}T23:59:59+09:00`)
+      .order('reported_at')
+    setLoading(false)
+    if (!data || data.length === 0) { alert('データがありません'); return }
+
+    const header = ['日付', '時刻', '氏名', '作業内容', 'カテゴリ', '時間', '場所', '株数', '3F', '5F']
+    const rows = data.map((r: any) => {
+      const dt = new Date(r.reported_at)
+      const date = `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`
+      const time = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
+      return [date, time, r.employees?.name || '', r.work_type, r.work_category, r.hours, r.location || '', r.plant_count ?? '', r.plant_count_3f ?? '', r.plant_count_5f ?? '']
+    })
+    downloadCsv(`作業報告_${getToday()}.csv`, [header, ...rows])
+  }
+
+  return (
+    <CsvPanel title="作業報告CSV" from={from} to={to} setFrom={setFrom} setTo={setTo} loading={loading} onDownload={download} />
+  )
+}
+
+function CsvLossReport() {
+  const supabase = createClient()
+  const [from, setFrom] = useState(getMonthStart)
+  const [to, setTo] = useState(getToday)
+  const [loading, setLoading] = useState(false)
+
+  const download = async () => {
+    setLoading(true)
+    const { data: reports } = await supabase
+      .from('loss_reports')
+      .select('id, work_date, employee_id, greenhouses, positions, memo, employees(name)')
+      .gte('work_date', from)
+      .lte('work_date', to)
+      .order('work_date')
+    if (!reports || reports.length === 0) { setLoading(false); alert('データがありません'); return }
+
+    const ids = reports.map((r) => r.id)
+    const { data: items } = await supabase
+      .from('loss_report_items')
+      .select('loss_report_id, variety, loss_type, reason, quantity')
+      .in('loss_report_id', ids)
+    setLoading(false)
+
+    const header = ['作業日', '氏名', '温室', 'ポジション', '品種', '破棄/B・C品', '理由', '数量', 'メモ']
+    const rows: string[][] = []
+    reports.forEach((r: any) => {
+      const reportItems = (items || []).filter((i) => i.loss_report_id === r.id)
+      if (reportItems.length === 0) {
+        rows.push([r.work_date, r.employees?.name || '', (r.greenhouses || []).join('/'), (r.positions || []).join('/'), '', '', '', '', r.memo || ''])
+      } else {
+        reportItems.forEach((i) => {
+          rows.push([r.work_date, r.employees?.name || '', (r.greenhouses || []).join('/'), (r.positions || []).join('/'), i.variety, i.loss_type === 'discard' ? '破棄' : 'B・C品', i.reason, String(i.quantity), r.memo || ''])
+        })
+      }
+    })
+    downloadCsv(`ロス報告_${getToday()}.csv`, [header, ...rows])
+  }
+
+  return (
+    <CsvPanel title="ロス報告CSV" from={from} to={to} setFrom={setFrom} setTo={setTo} loading={loading} onDownload={download} />
+  )
+}
+
+function CsvTimecard() {
+  const supabase = createClient()
+  const now = new Date()
+  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth() + 1)
+  const [loading, setLoading] = useState(false)
+
+  const download = async () => {
+    setLoading(true)
+    const from = `${year}-${String(month).padStart(2, '0')}-01`
+    const lastDay = new Date(year, month, 0).getDate()
+    const to = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+    const { data } = await supabase
+      .from('timecards')
+      .select('work_date, clock_in, clock_out, employees(name)')
+      .gte('work_date', from)
+      .lte('work_date', to)
+      .order('work_date')
+    setLoading(false)
+    if (!data || data.length === 0) { alert('データがありません'); return }
+
+    const header = ['日付', '氏名', '出勤時刻', '退勤時刻', '勤務時間']
+    const rows = data.map((r: any) => {
+      let workHours = ''
+      if (r.clock_in && r.clock_out) {
+        const mins = (new Date(r.clock_out).getTime() - new Date(r.clock_in).getTime()) / 60000
+        workHours = (Math.round(mins / 6) / 10).toFixed(1) + 'h'
+      }
+      return [r.work_date, r.employees?.name || '', formatTime(r.clock_in), formatTime(r.clock_out), workHours]
+    })
+    downloadCsv(`タイムカード_${year}-${String(month).padStart(2, '0')}.csv`, [header, ...rows])
+  }
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-4" style={{ color: '#1f2937' }}>タイムカードCSV</h3>
+      <div className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+        <div className="flex items-end gap-3">
+          <div>
+            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>年</p>
+            <input type="number" value={year} onChange={(e) => setYear(parseInt(e.target.value) || year)}
+              className="w-24 px-3 py-3 rounded-xl text-base text-center focus:outline-none"
+              style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
+          </div>
+          <div>
+            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>月</p>
+            <input type="number" value={month} min={1} max={12} onChange={(e) => setMonth(parseInt(e.target.value) || month)}
+              className="w-20 px-3 py-3 rounded-xl text-base text-center focus:outline-none"
+              style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
+          </div>
+          <button
+            onClick={download}
+            disabled={loading}
+            className="px-5 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all disabled:opacity-40"
+            style={outlineGoldBtn}
+          >
+            {loading ? '取得中...' : '📥 CSVダウンロード'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CsvPanel({ title, from, to, setFrom, setTo, loading, onDownload }: {
+  title: string; from: string; to: string; setFrom: (v: string) => void; setTo: (v: string) => void; loading: boolean; onDownload: () => void
+}) {
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-4" style={{ color: '#1f2937' }}>{title}</h3>
+      <div className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+        <div className="flex items-end gap-3">
+          <div>
+            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>開始日</p>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+              className="px-3 py-3 rounded-xl text-base focus:outline-none"
+              style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
+          </div>
+          <div>
+            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>終了日</p>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+              className="px-3 py-3 rounded-xl text-base focus:outline-none"
+              style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
+          </div>
+          <button
+            onClick={onDownload}
+            disabled={loading}
+            className="px-5 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all disabled:opacity-40"
+            style={outlineGoldBtn}
+          >
+            {loading ? '取得中...' : '📥 CSVダウンロード'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 共通スタイル ──
 const cardStyle = { background: '#ffffff', border: '1px solid #e5e7eb' }
 const goldBtn = { background: '#b8963e', color: '#fff', boxShadow: '0 2px 12px rgba(184,150,62,0.2)' }
@@ -359,6 +569,9 @@ const MENU = [
   { id: 'location', label: '場所マスタ', icon: '📍' },
   { id: 'variety', label: '品種マスタ', icon: '🌿' },
   { id: 'loss_reason', label: 'ロス理由マスタ', icon: '📋' },
+  { id: 'csv_work', label: '作業報告CSV', icon: '📥' },
+  { id: 'csv_loss', label: 'ロス報告CSV', icon: '📥' },
+  { id: 'csv_timecard', label: 'タイムカードCSV', icon: '📥' },
 ]
 
 // ── メインページ ──
@@ -496,6 +709,10 @@ export default function AdminPage() {
             )}
           />
         )}
+
+        {section === 'csv_work' && <CsvWorkReport />}
+        {section === 'csv_loss' && <CsvLossReport />}
+        {section === 'csv_timecard' && <CsvTimecard />}
       </div>
     </div>
   )
