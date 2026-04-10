@@ -275,17 +275,20 @@ function MasterPanel({
 }) {
   const supabase = createClient()
   const [editId, setEditId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<any>({ label: '', display_order: 0 })
   const [saving, setSaving] = useState(false)
 
   const startEdit = (item: MasterItem) => {
     setEditId(item.id)
     setForm({ ...item })
+    setShowForm(true)
   }
 
   const cancelEdit = () => {
     setEditId(null)
     setForm({ label: '', display_order: 0 })
+    setShowForm(false)
   }
 
   const save = async () => {
@@ -294,13 +297,14 @@ function MasterPanel({
     if (editId) {
       const { label, display_order, ...extra } = form
       const updateData: any = { label, display_order }
-      // extraフィールドも更新
       if (extra.category !== undefined) updateData.category = extra.category
       if (extra.loss_type !== undefined) updateData.loss_type = extra.loss_type
-      await supabase.from(table).update(updateData).eq('id', editId)
+      const { error } = await supabase.from(table).update(updateData).eq('id', editId)
+      if (error) { alert('更新に失敗しました: ' + error.message); setSaving(false); return }
     } else {
       const { id, is_active, created_at, ...insertData } = form
-      await supabase.from(table).insert(insertData)
+      const { error } = await supabase.from(table).insert(insertData)
+      if (error) { alert('追加に失敗しました: ' + error.message); setSaving(false); return }
     }
     setSaving(false)
     cancelEdit()
@@ -315,6 +319,7 @@ function MasterPanel({
   const startNew = () => {
     setEditId(null)
     setForm({ label: '', display_order: items.length > 0 ? Math.max(...items.map((i) => i.display_order)) + 1 : 1 })
+    setShowForm(true)
   }
 
   return (
@@ -331,8 +336,7 @@ function MasterPanel({
       </div>
 
       {/* 新規 / 編集フォーム */}
-      {(editId !== null || form.label !== undefined && editId === null && form.display_order !== 0) ? null : null}
-      {editId !== null || (form.label !== '' || form.display_order !== 0) ? (
+      {showForm ? (
         <div className="rounded-xl p-5 mb-4" style={{ background: '#faf6ed', border: '1px solid #e8dcc3' }}>
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[200px]">
@@ -432,6 +436,7 @@ function EmployeePanel() {
   const supabase = createClient()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [editId, setEditId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', display_order: 0 })
   const [saving, setSaving] = useState(false)
 
@@ -445,20 +450,24 @@ function EmployeePanel() {
   const startEdit = (emp: Employee) => {
     setEditId(emp.id)
     setForm({ name: emp.name, display_order: emp.display_order })
+    setShowForm(true)
   }
 
   const cancelEdit = () => {
     setEditId(null)
     setForm({ name: '', display_order: 0 })
+    setShowForm(false)
   }
 
   const save = async () => {
     if (!form.name.trim()) return
     setSaving(true)
     if (editId) {
-      await supabase.from('employees').update({ name: form.name, display_order: form.display_order }).eq('id', editId)
+      const { error } = await supabase.from('employees').update({ name: form.name, display_order: form.display_order }).eq('id', editId)
+      if (error) { alert('更新に失敗しました: ' + error.message); setSaving(false); return }
     } else {
-      await supabase.from('employees').insert({ name: form.name, display_order: form.display_order })
+      const { error } = await supabase.from('employees').insert({ name: form.name, display_order: form.display_order })
+      if (error) { alert('追加に失敗しました: ' + error.message); setSaving(false); return }
     }
     setSaving(false)
     cancelEdit()
@@ -473,6 +482,7 @@ function EmployeePanel() {
   const startNew = () => {
     setEditId(null)
     setForm({ name: '', display_order: employees.length > 0 ? Math.max(...employees.map((e) => e.display_order)) + 1 : 1 })
+    setShowForm(true)
   }
 
   return (
@@ -484,7 +494,7 @@ function EmployeePanel() {
         </button>
       </div>
 
-      {(editId !== null || form.name !== '') && (
+      {showForm && (
         <div className="rounded-xl p-5 mb-4" style={{ background: '#faf6ed', border: '1px solid #e8dcc3' }}>
           <div className="flex items-end gap-3">
             <div className="flex-1">
