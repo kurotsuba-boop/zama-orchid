@@ -376,10 +376,10 @@ function MasterPanel({
       ) : null}
 
       {/* 一覧テーブル */}
-      <div className="rounded-xl overflow-hidden" style={cardStyle}>
+      <div className="rounded-xl overflow-hidden overflow-y-auto" style={{ ...cardStyle, maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full text-sm">
-          <thead>
-            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+          <thead className="sticky top-0" style={{ background: '#f9fafb' }}>
+            <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
               <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>名称</th>
               {extraColumns?.map((col) => (
                 <th key={col.key} className="text-center py-3 px-4 font-bold" style={{ color: '#6b7280' }}>
@@ -436,7 +436,7 @@ function EmployeePanel() {
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
-    const { data } = await supabase.from('employees').select('*').order('display_order')
+    const { data } = await supabase.from('employees').select('*').order('display_order').range(0, 9999)
     if (data) setEmployees(data)
   }
 
@@ -522,10 +522,10 @@ function EmployeePanel() {
         </div>
       )}
 
-      <div className="rounded-xl overflow-hidden" style={cardStyle}>
+      <div className="rounded-xl overflow-hidden overflow-y-auto" style={{ ...cardStyle, maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full text-sm">
-          <thead>
-            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+          <thead className="sticky top-0" style={{ background: '#f9fafb' }}>
+            <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
               <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>氏名</th>
               <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>順序</th>
               <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#6b7280' }}>有効</th>

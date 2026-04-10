@@ -15,6 +15,7 @@ export function useEmployees() {
       .select('*')
       .eq('is_active', true)
       .order('display_order')
+      .range(0, 9999)
       .then(({ data }) => {
         if (data) setEmployees(data)
         setLoading(false)

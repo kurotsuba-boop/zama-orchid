@@ -17,7 +17,7 @@ function useFetch<T>(table: string, filter?: Record<string, any>) {
         query = query.eq(k, v)
       })
     }
-    const { data: rows } = await query
+    const { data: rows } = await query.range(0, 9999)
     if (rows) setData(rows as T[])
     setLoading(false)
   }
