@@ -17,6 +17,11 @@ function getToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// 作業名による入力項目分岐
+const FLOOR_WORKS = ['胡蝶蘭作り', 'ミディ']
+const BEND_WORK = '曲げ'
+const POLE_WORK = '支柱立て'
+
 export default function WorkReport() {
   const { employees } = useEmployees()
   const { data: workTypes } = useWorkMaster()
@@ -29,19 +34,33 @@ export default function WorkReport() {
   const [workCategory, setWorkCategory] = useState<'A' | 'B' | ''>('')
   const [hours, setHours] = useState(3.0)
   const [location, setLocation] = useState('')
-  const [plantCount, setPlantCount] = useState(30)
-  const [plantCount3f, setPlantCount3f] = useState(0)
-  const [plantCount5f, setPlantCount5f] = useState(0)
+  const [count1f, setCount1f] = useState(0)
+  const [count2f, setCount2f] = useState(0)
+  const [count3f, setCount3f] = useState(0)
+  const [count4f, setCount4f] = useState(0)
+  const [count5f, setCount5f] = useState(0)
+  const [count5fOver, setCount5fOver] = useState(0)
+  const [bendCount, setBendCount] = useState(0)
+  const [poleCount, setPoleCount] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const isA = workCategory === 'A'
-  const canSubmit = empId && workType && hours > 0 && (!isA || location)
+  const isFloors = FLOOR_WORKS.includes(workType)
+  const isBend = workType === BEND_WORK
+  const isPole = workType === POLE_WORK
+
+  const canSubmit = Boolean(empId && workType && hours > 0 && location)
+
+  const resetSubCounts = () => {
+    setCount1f(0); setCount2f(0); setCount3f(0); setCount4f(0); setCount5f(0); setCount5fOver(0)
+    setBendCount(0); setPoleCount(0)
+  }
 
   const selectWork = (label: string, category: 'A' | 'B') => {
     setWorkType(label)
     setWorkCategory(category)
     setLocation('')
+    resetSubCounts()
   }
 
   const reset = () => {
@@ -51,25 +70,42 @@ export default function WorkReport() {
     setWorkCategory('')
     setHours(3.0)
     setLocation('')
-    setPlantCount(30)
-    setPlantCount3f(0)
-    setPlantCount5f(0)
+    resetSubCounts()
   }
 
   const handleSubmit = async () => {
     setShowConfirm(false)
     const supabase = createClient()
-    const { error } = await supabase.from('work_reports').insert({
+    const payload: any = {
       reported_at: `${date}T00:00:00+09:00`,
       employee_id: empId,
       work_type: workType,
       work_category: workCategory,
       hours,
-      location: isA ? location : null,
-      plant_count: isA ? plantCount : null,
-      plant_count_3f: isA ? plantCount3f : null,
-      plant_count_5f: isA ? plantCount5f : null,
-    })
+      location,
+      plant_count: null,
+      plant_count_1f: null,
+      plant_count_2f: null,
+      plant_count_3f: null,
+      plant_count_4f: null,
+      plant_count_5f: null,
+      plant_count_5f_over: null,
+      bend_count: null,
+      pole_count: null,
+    }
+    if (isFloors) {
+      payload.plant_count_1f = count1f
+      payload.plant_count_2f = count2f
+      payload.plant_count_3f = count3f
+      payload.plant_count_4f = count4f
+      payload.plant_count_5f = count5f
+      payload.plant_count_5f_over = count5fOver
+    } else if (isBend) {
+      payload.bend_count = bendCount
+    } else if (isPole) {
+      payload.pole_count = poleCount
+    }
+    const { error } = await supabase.from('work_reports').insert(payload)
     if (error) {
       alert('登録に失敗しました: ' + error.message)
       return
@@ -81,8 +117,10 @@ export default function WorkReport() {
   const confirmLines = [
     date,
     empName,
-    `${workType}　${hours.toFixed(1)}h`,
-    ...(isA ? [`${location}　${plantCount}株（3F: ${plantCount3f} / 5F: ${plantCount5f}）`] : []),
+    `${workType}　${hours.toFixed(1)}h　${location}`,
+    ...(isFloors ? [`1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver} 株`] : []),
+    ...(isBend ? [`曲げ数: ${bendCount} 本`] : []),
+    ...(isPole ? [`立て数: ${poleCount} 本`] : []),
   ]
 
   return (
@@ -138,7 +176,7 @@ export default function WorkReport() {
       <div className="w-[450px] h-full flex flex-col justify-between flex-shrink-0">
         {workType ? (
           <div
-            className="flex-1 rounded-2xl p-5 flex flex-col justify-between"
+            className="flex-1 rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto"
             style={{
               background: '#faf6ed',
               border: '1.5px solid #e8dcc3',
@@ -146,72 +184,87 @@ export default function WorkReport() {
             }}
           >
             <div>
-              <Label>{isA ? '仕立て時間' : '作業時間'}</Label>
+              <Label>対応時間</Label>
               <SliderInput value={hours} onChange={setHours} showTicks={false} tight />
             </div>
-            {isA && (
-              <>
-                <div>
-                  <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#9ca3af' }}>場所</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {locations.map((l) => (
-                      <Chip
-                        key={l.id}
-                        label={l.label}
-                        active={location === l.label}
-                        onClick={() => setLocation(l.label)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>株数</p>
-                  <SliderInput
-                    value={plantCount}
-                    onChange={setPlantCount}
-                    min={0}
-                    max={150}
-                    step={1}
-                    unit="株"
-                    decimal={0}
-                    size="large"
-                    showTicks={false}
-                    tight
+
+            <div>
+              <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#9ca3af' }}>場所</p>
+              <div className="flex flex-wrap gap-1.5">
+                {locations.map((l) => (
+                  <Chip
+                    key={l.id}
+                    label={l.label}
+                    active={location === l.label}
+                    onClick={() => setLocation(l.label)}
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>3F</p>
+                ))}
+              </div>
+            </div>
+
+            {isFloors && (
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: '1F', value: count1f, set: setCount1f },
+                  { label: '2F', value: count2f, set: setCount2f },
+                  { label: '3F', value: count3f, set: setCount3f },
+                  { label: '4F', value: count4f, set: setCount4f },
+                  { label: '5F', value: count5f, set: setCount5f },
+                  { label: '5F以上', value: count5fOver, set: setCount5fOver },
+                ].map((f) => (
+                  <div key={f.label}>
+                    <p className="text-sm font-bold mb-1" style={{ color: '#b8963e' }}>{f.label}</p>
                     <SliderInput
-                      value={plantCount3f}
-                      onChange={setPlantCount3f}
+                      value={f.value}
+                      onChange={f.set}
                       min={0}
-                      max={50}
+                      max={150}
                       step={1}
                       unit="株"
                       decimal={0}
-                      size="large"
+                      size="compact"
                       showTicks={false}
                       tight
                     />
                   </div>
-                  <div>
-                    <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>5F</p>
-                    <SliderInput
-                      value={plantCount5f}
-                      onChange={setPlantCount5f}
-                      min={0}
-                      max={50}
-                      step={1}
-                      unit="株"
-                      decimal={0}
-                      size="large"
-                      showTicks={false}
-                      tight
-                    />
-                  </div>
-                </div>
-              </>
+                ))}
+              </div>
+            )}
+
+            {isBend && (
+              <div>
+                <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>曲げ数</p>
+                <SliderInput
+                  value={bendCount}
+                  onChange={setBendCount}
+                  min={0}
+                  max={300}
+                  step={1}
+                  unit="本"
+                  decimal={0}
+                  size="large"
+                  showTicks={false}
+                  tight
+                />
+              </div>
+            )}
+
+            {isPole && (
+              <div>
+                <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>立て数</p>
+                <SliderInput
+                  value={poleCount}
+                  onChange={setPoleCount}
+                  min={0}
+                  max={300}
+                  step={1}
+                  unit="本"
+                  decimal={0}
+                  size="large"
+                  showTicks={false}
+                  tight
+                />
+              </div>
             )}
           </div>
         ) : (
