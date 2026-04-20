@@ -162,7 +162,7 @@ export default function LossReport() {
   const confirmLines = [
     empName,
     `温室: ${greenhouses.join(', ')}`,
-    `ポジション: ${positions.join(', ')}`,
+    `作業区域: ${positions.join(', ')}`,
     `ロス合計: ${totalItems}件`,
     ...(memo ? [`メモ: ${memo}`] : []),
   ]

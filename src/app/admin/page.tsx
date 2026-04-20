@@ -109,7 +109,7 @@ function CsvLossReport() {
       .in('loss_report_id', ids)
     setLoading(false)
 
-    const header = ['作業日', '氏名', '温室', 'ポジション', '品種', '破棄/B・C品', '理由', '数量', 'メモ']
+    const header = ['作業日', '氏名', '温室', '作業区域', '品種', '破棄/B・C品', '理由', '数量', 'メモ']
     const rows: string[][] = []
     reports.forEach((r: any) => {
       const reportItems = (items || []).filter((i) => i.loss_report_id === r.id)
