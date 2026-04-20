@@ -11,6 +11,7 @@ import Label from '@/components/Label'
 import DatePicker from '@/components/DatePicker'
 import ConfirmModal from '@/components/ConfirmModal'
 import SuccessOverlay from '@/components/SuccessOverlay'
+import Stepper from '@/components/Stepper'
 
 function getToday() {
   const d = new Date()
@@ -114,6 +115,8 @@ export default function WorkReport() {
       payload.plant_count_4f = count4f
       payload.plant_count_5f = count5f
       payload.plant_count_5f_over = count5fOver
+      payload.bend_count = bendCount
+      payload.pole_count = poleCount
     } else if (isBend) {
       payload.bend_count = bendCount
     } else if (isPole) {
@@ -153,7 +156,10 @@ export default function WorkReport() {
     date,
     empName,
     `${workType}　${hours.toFixed(1)}h　${location}`,
-    ...(isFloors ? [`1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver} 株`] : []),
+    ...(isFloors ? [
+      `1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver} 株`,
+      `曲げ数: ${bendCount} 本 / 立て数: ${poleCount} 本`,
+    ] : []),
     ...(isBend ? [`曲げ数: ${bendCount} 本`] : []),
     ...(isPole ? [`立て数: ${poleCount} 本`] : []),
   ]
@@ -253,32 +259,61 @@ export default function WorkReport() {
               </div>
 
               {isFloors && (
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: '1F', value: count1f, set: setCount1f },
-                    { label: '2F', value: count2f, set: setCount2f },
-                    { label: '3F', value: count3f, set: setCount3f },
-                    { label: '4F', value: count4f, set: setCount4f },
-                    { label: '5F', value: count5f, set: setCount5f },
-                    { label: '5F以上', value: count5fOver, set: setCount5fOver },
-                  ].map((f) => (
-                    <div key={f.label}>
-                      <p className="text-sm font-bold mb-1" style={{ color: '#b8963e' }}>{f.label}</p>
-                      <SliderInput
-                        value={f.value}
-                        onChange={f.set}
-                        min={0}
-                        max={150}
-                        step={1}
-                        unit="株"
-                        decimal={0}
-                        size="compact"
-                        showTicks={false}
-                        tight
-                      />
+                <>
+                  <div>
+                    <p className="text-lg font-bold mb-2" style={{ color: '#b8963e' }}>株数</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: '1F', value: count1f, set: setCount1f },
+                        { label: '2F', value: count2f, set: setCount2f },
+                        { label: '3F', value: count3f, set: setCount3f },
+                        { label: '4F', value: count4f, set: setCount4f },
+                        { label: '5F', value: count5f, set: setCount5f },
+                        { label: '5F以上', value: count5fOver, set: setCount5fOver },
+                      ].map((f) => (
+                        <div key={f.label} className="flex flex-col items-center gap-1">
+                          <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>{f.label}</p>
+                          <div style={{ zoom: 0.88 }}>
+                            <Stepper
+                              value={f.value}
+                              onChange={(v) => f.set(Math.min(150, Math.max(0, v)))}
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>曲げ数</p>
+                    <SliderInput
+                      value={bendCount}
+                      onChange={setBendCount}
+                      min={0}
+                      max={300}
+                      step={1}
+                      unit="本"
+                      decimal={0}
+                      size="compact"
+                      showTicks={false}
+                      tight
+                    />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>立て数</p>
+                    <SliderInput
+                      value={poleCount}
+                      onChange={setPoleCount}
+                      min={0}
+                      max={300}
+                      step={1}
+                      unit="本"
+                      decimal={0}
+                      size="compact"
+                      showTicks={false}
+                      tight
+                    />
+                  </div>
+                </>
               )}
 
               {isBend && (
