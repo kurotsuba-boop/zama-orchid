@@ -210,7 +210,7 @@ export default function LossReport() {
         </div>
 
         <div>
-          <Label>ポジション</Label>
+          <Label>作業区域</Label>
           <div className="flex flex-wrap gap-2">
             {POSITIONS.map((p) => (
               <Chip
