@@ -265,6 +265,7 @@ function MasterPanel({
   reload,
   extraColumns,
   extraFields,
+  extraDefaults,
 }: {
   title: string
   table: string
@@ -272,6 +273,7 @@ function MasterPanel({
   reload: () => void
   extraColumns?: { key: string; label: string; render: (item: MasterItem) => React.ReactNode }[]
   extraFields?: (form: any, setForm: (f: any) => void) => React.ReactNode
+  extraDefaults?: Record<string, any>
 }) {
   const supabase = createClient()
   const [editId, setEditId] = useState<string | null>(null)
@@ -318,7 +320,11 @@ function MasterPanel({
 
   const startNew = () => {
     setEditId(null)
-    setForm({ label: '', display_order: items.length > 0 ? Math.max(...items.map((i) => i.display_order)) + 1 : 1 })
+    setForm({
+      label: '',
+      display_order: items.length > 0 ? Math.max(...items.map((i) => i.display_order)) + 1 : 1,
+      ...extraDefaults,
+    })
     setShowForm(true)
   }
 
@@ -656,6 +662,7 @@ export default function AdminPage() {
             table="work_master"
             items={workMaster.data}
             reload={workMaster.reload}
+            extraDefaults={{ category: 'B' }}
             extraColumns={[
               { key: 'category', label: 'カテゴリ', render: (item) => categoryBadge(item.category) },
             ]}
@@ -700,6 +707,7 @@ export default function AdminPage() {
             table="loss_reason_master"
             items={lossReasonMaster.data}
             reload={lossReasonMaster.reload}
+            extraDefaults={{ loss_type: 'discard' }}
             extraColumns={[
               { key: 'loss_type', label: '種別', render: (item) => lossTypeBadge(item.loss_type) },
             ]}
