@@ -75,3 +75,13 @@ select {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(184, 150, 62, 0.35);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 6px 32px rgba(184, 150, 62, 0.75);
+    transform: scale(1.015);
+  }
+}

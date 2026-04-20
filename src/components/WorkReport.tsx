@@ -254,9 +254,10 @@ export default function WorkReport() {
           style={{
             background: canSubmit ? '#b8963e' : '#e5e7eb',
             boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
+            animation: canSubmit ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
           }}
         >
-          登録する
+          この内容で登録 ✓
         </button>
       </div>
 
