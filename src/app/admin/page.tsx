@@ -301,6 +301,9 @@ function MasterPanel({
       const updateData: any = { label, display_order }
       if (extra.category !== undefined) updateData.category = extra.category
       if (extra.loss_type !== undefined) updateData.loss_type = extra.loss_type
+      if (extra.has_floor_count !== undefined) updateData.has_floor_count = extra.has_floor_count
+      if (extra.has_bend_count !== undefined) updateData.has_bend_count = extra.has_bend_count
+      if (extra.has_pole_count !== undefined) updateData.has_pole_count = extra.has_pole_count
       const { error } = await supabase.from(table).update(updateData).eq('id', editId)
       if (error) { alert('更新に失敗しました: ' + error.message); setSaving(false); return }
     } else {
@@ -662,23 +665,42 @@ export default function AdminPage() {
             table="work_master"
             items={workMaster.data}
             reload={workMaster.reload}
-            extraDefaults={{ category: 'B' }}
+            extraDefaults={{ category: 'B', has_floor_count: false, has_bend_count: false, has_pole_count: false }}
             extraColumns={[
               { key: 'category', label: 'カテゴリ', render: (item) => categoryBadge(item.category) },
             ]}
             extraFields={(form, setForm) => (
-              <div className="w-32">
-                <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>カテゴリ</p>
-                <select
-                  value={form.category || 'B'}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-3 py-3 rounded-xl text-base focus:outline-none cursor-pointer"
-                  style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }}
-                >
-                  <option value="A">仕立て (A)</option>
-                  <option value="B">その他 (B)</option>
-                </select>
-              </div>
+              <>
+                <div className="w-32">
+                  <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>カテゴリ</p>
+                  <select
+                    value={form.category || 'B'}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-3 py-3 rounded-xl text-base focus:outline-none cursor-pointer"
+                    style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }}
+                  >
+                    <option value="A">仕立て (A)</option>
+                    <option value="B">その他 (B)</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2 pb-1 justify-end">
+                  {[
+                    { key: 'has_floor_count', label: '株数入力' },
+                    { key: 'has_bend_count', label: '曲げ数入力' },
+                    { key: 'has_pole_count', label: '立て数入力' },
+                  ].map((f) => (
+                    <div key={f.key} className="flex items-center gap-2">
+                      <Toggle
+                        value={!!form[f.key]}
+                        onChange={(v) => setForm({ ...form, [f.key]: v })}
+                      />
+                      <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#6b7280' }}>
+                        {f.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           />
         )}
