@@ -17,11 +17,6 @@ function getToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function getNow() {
-  const d = new Date()
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
 export default function WorkReport() {
   const { employees } = useEmployees()
   const { data: workTypes } = useWorkMaster()
@@ -29,7 +24,6 @@ export default function WorkReport() {
   const workA = workTypes.filter((w) => w.category === 'A')
   const workB = workTypes.filter((w) => w.category === 'B')
   const [date, setDate] = useState(getToday)
-  const [time, setTime] = useState(getNow)
   const [empId, setEmpId] = useState('')
   const [workType, setWorkType] = useState('')
   const [workCategory, setWorkCategory] = useState<'A' | 'B' | ''>('')
@@ -52,7 +46,6 @@ export default function WorkReport() {
 
   const reset = () => {
     setDate(getToday())
-    setTime(getNow())
     setEmpId('')
     setWorkType('')
     setWorkCategory('')
@@ -67,7 +60,7 @@ export default function WorkReport() {
     setShowConfirm(false)
     const supabase = createClient()
     const { error } = await supabase.from('work_reports').insert({
-      reported_at: `${date}T${time}:00+09:00`,
+      reported_at: `${date}T00:00:00+09:00`,
       employee_id: empId,
       work_type: workType,
       work_category: workCategory,
@@ -86,7 +79,7 @@ export default function WorkReport() {
 
   const empName = employees.find((e) => e.id === empId)?.name || ''
   const confirmLines = [
-    `${date} ${time}`,
+    date,
     empName,
     `${workType}　${hours.toFixed(1)}h`,
     ...(isA ? [`${location}　${plantCount}株（3F: ${plantCount3f} / 5F: ${plantCount5f}）`] : []),
@@ -109,21 +102,9 @@ export default function WorkReport() {
           />
         </div>
 
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <Label>日付</Label>
-            <DatePicker value={date} onChange={setDate} />
-          </div>
-          <div className="w-40">
-            <Label>時刻</Label>
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full px-5 py-4 text-lg rounded-xl focus:outline-none"
-              style={{ background: '#ffffff', color: '#1f2937', border: '1.5px solid #e5e7eb' }}
-            />
-          </div>
+        <div>
+          <Label>日付</Label>
+          <DatePicker value={date} onChange={setDate} />
         </div>
 
         <div>
