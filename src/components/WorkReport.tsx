@@ -22,6 +22,8 @@ const FLOOR_WORKS = ['胡蝶蘭作り', 'ミディ']
 const BEND_WORK = '曲げ'
 const POLE_WORK = '支柱立て'
 
+type SuccessMode = null | 'single' | 'final'
+
 export default function WorkReport() {
   const { employees } = useEmployees()
   const { data: workTypes } = useWorkMaster()
@@ -43,32 +45,44 @@ export default function WorkReport() {
   const [bendCount, setBendCount] = useState(0)
   const [poleCount, setPoleCount] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [successMode, setSuccessMode] = useState<SuccessMode>(null)
+  const [sessionCount, setSessionCount] = useState(0)
+  const [totalHours, setTotalHours] = useState(0)
+  const [finalizing, setFinalizing] = useState(false)
 
   const isFloors = FLOOR_WORKS.includes(workType)
   const isBend = workType === BEND_WORK
   const isPole = workType === POLE_WORK
 
   const canSubmit = Boolean(empId && workType && hours > 0 && location)
+  const canFinalize = sessionCount > 0 && !finalizing
 
   const resetSubCounts = () => {
     setCount1f(0); setCount2f(0); setCount3f(0); setCount4f(0); setCount5f(0); setCount5fOver(0)
     setBendCount(0); setPoleCount(0)
   }
 
-  const selectWork = (label: string, category: 'A' | 'B') => {
-    setWorkType(label)
-    setWorkCategory(category)
+  // 作業関連だけリセット（氏名・日付は残す）
+  const resetWork = () => {
+    setWorkType('')
+    setWorkCategory('')
+    setHours(3.0)
     setLocation('')
     resetSubCounts()
   }
 
-  const reset = () => {
+  // 全体リセット（最終確定後）
+  const resetAll = () => {
     setDate(getToday())
     setEmpId('')
-    setWorkType('')
-    setWorkCategory('')
-    setHours(3.0)
+    setSessionCount(0)
+    setTotalHours(0)
+    resetWork()
+  }
+
+  const selectWork = (label: string, category: 'A' | 'B') => {
+    setWorkType(label)
+    setWorkCategory(category)
     setLocation('')
     resetSubCounts()
   }
@@ -110,7 +124,28 @@ export default function WorkReport() {
       alert('登録に失敗しました: ' + error.message)
       return
     }
-    setShowSuccess(true)
+    setSessionCount((c) => c + 1)
+    setSuccessMode('single')
+  }
+
+  const handleFinalize = async () => {
+    if (!canFinalize) return
+    setFinalizing(true)
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('work_reports')
+      .select('hours')
+      .eq('employee_id', empId)
+      .gte('reported_at', `${date}T00:00:00+09:00`)
+      .lte('reported_at', `${date}T23:59:59+09:00`)
+    setFinalizing(false)
+    if (error) {
+      alert('合計取得に失敗しました: ' + error.message)
+      return
+    }
+    const sum = (data || []).reduce((a, r: any) => a + (Number(r.hours) || 0), 0)
+    setTotalHours(sum)
+    setSuccessMode('final')
   }
 
   const empName = employees.find((e) => e.id === empId)?.name || ''
@@ -124,175 +159,191 @@ export default function WorkReport() {
   ]
 
   return (
-    <div className="flex gap-8 h-full" style={{ animation: 'fadeIn 0.3s' }}>
-      {/* 左カラム: 入力 */}
-      <div
-        className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3"
-        style={{ maxHeight: 'calc(100vh - 100px)' }}
-      >
-        <div>
-          <Label>担当氏名</Label>
-          <SelectField
-            value={empId}
-            onChange={setEmpId}
-            options={employees.map((e) => ({ id: e.id, name: e.name }))}
-            placeholder="名前を選択してください"
-          />
-        </div>
-
-        <div>
-          <Label>日付</Label>
-          <DatePicker value={date} onChange={setDate} />
-        </div>
-
-        <div>
-          <Label>仕立て作業</Label>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {workA.map((w) => (
-              <Chip
-                key={w.id}
-                label={w.label}
-                active={workType === w.label}
-                onClick={() => selectWork(w.label, 'A')}
-                size="lg"
-              />
-            ))}
-          </div>
-          <Label>その他作業</Label>
-          <div className="flex flex-wrap gap-2">
-            {workB.map((w) => (
-              <Chip
-                key={w.id}
-                label={w.label}
-                active={workType === w.label}
-                onClick={() => selectWork(w.label, 'B')}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 右カラム: 詳細パネル + 登録ボタン */}
-      <div className="w-[450px] h-full flex flex-col justify-between flex-shrink-0">
-        {workType ? (
-          <div
-            className="flex-1 rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto"
-            style={{
-              background: '#faf6ed',
-              border: '1.5px solid #e8dcc3',
-              animation: 'slideUp 0.2s',
-            }}
-          >
-            <div>
-              <Label>対応時間</Label>
-              <SliderInput value={hours} onChange={setHours} showTicks={false} tight />
-            </div>
-
-            <div>
-              <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#9ca3af' }}>場所</p>
-              <div className="flex flex-wrap gap-1.5">
-                {locations.map((l) => (
-                  <Chip
-                    key={l.id}
-                    label={l.label}
-                    active={location === l.label}
-                    onClick={() => setLocation(l.label)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {isFloors && (
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: '1F', value: count1f, set: setCount1f },
-                  { label: '2F', value: count2f, set: setCount2f },
-                  { label: '3F', value: count3f, set: setCount3f },
-                  { label: '4F', value: count4f, set: setCount4f },
-                  { label: '5F', value: count5f, set: setCount5f },
-                  { label: '5F以上', value: count5fOver, set: setCount5fOver },
-                ].map((f) => (
-                  <div key={f.label}>
-                    <p className="text-sm font-bold mb-1" style={{ color: '#b8963e' }}>{f.label}</p>
-                    <SliderInput
-                      value={f.value}
-                      onChange={f.set}
-                      min={0}
-                      max={150}
-                      step={1}
-                      unit="株"
-                      decimal={0}
-                      size="compact"
-                      showTicks={false}
-                      tight
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {isBend && (
-              <div>
-                <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>曲げ数</p>
-                <SliderInput
-                  value={bendCount}
-                  onChange={setBendCount}
-                  min={0}
-                  max={300}
-                  step={1}
-                  unit="本"
-                  decimal={0}
-                  size="large"
-                  showTicks={false}
-                  tight
-                />
-              </div>
-            )}
-
-            {isPole && (
-              <div>
-                <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>立て数</p>
-                <SliderInput
-                  value={poleCount}
-                  onChange={setPoleCount}
-                  min={0}
-                  max={300}
-                  step={1}
-                  unit="本"
-                  decimal={0}
-                  size="large"
-                  showTicks={false}
-                  tight
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            className="flex-1 rounded-2xl flex items-center justify-center"
-            style={{ border: '2px dashed #e5e7eb' }}
-          >
-            <div className="text-center">
-              <p className="text-4xl mb-3">👈</p>
-              <p className="text-base" style={{ color: '#9ca3af' }}>
-                作業内容を選択
-              </p>
-            </div>
-          </div>
-        )}
-
+    <div className="flex flex-col h-full gap-3" style={{ animation: 'fadeIn 0.3s' }}>
+      {/* 最終確定ボタン（右上） */}
+      <div className="flex justify-end">
         <button
-          disabled={!canSubmit}
-          onClick={() => setShowConfirm(true)}
-          className="py-4 mt-2 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25"
+          onClick={handleFinalize}
+          disabled={!canFinalize}
+          className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
           style={{
-            background: canSubmit ? '#b8963e' : '#e5e7eb',
-            boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
-            animation: canSubmit ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
+            background: '#ffffff',
+            color: '#b8963e',
+            border: '1.5px solid #b8963e',
           }}
         >
-          この内容で登録 ✓
+          ✓ 最終確定{sessionCount > 0 ? `（${sessionCount}件登録済み）` : ''}
         </button>
+      </div>
+
+      {/* メイン2カラム */}
+      <div className="flex gap-8 flex-1 min-h-0">
+        {/* 左カラム: 入力 */}
+        <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3">
+          <div>
+            <Label>担当氏名</Label>
+            <SelectField
+              value={empId}
+              onChange={setEmpId}
+              options={employees.map((e) => ({ id: e.id, name: e.name }))}
+              placeholder="名前を選択してください"
+            />
+          </div>
+
+          <div>
+            <Label>日付</Label>
+            <DatePicker value={date} onChange={setDate} />
+          </div>
+
+          <div>
+            <Label>仕立て作業</Label>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {workA.map((w) => (
+                <Chip
+                  key={w.id}
+                  label={w.label}
+                  active={workType === w.label}
+                  onClick={() => selectWork(w.label, 'A')}
+                  size="lg"
+                />
+              ))}
+            </div>
+            <Label>その他作業</Label>
+            <div className="flex flex-wrap gap-2">
+              {workB.map((w) => (
+                <Chip
+                  key={w.id}
+                  label={w.label}
+                  active={workType === w.label}
+                  onClick={() => selectWork(w.label, 'B')}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 右カラム: 詳細パネル + 登録ボタン */}
+        <div className="w-[450px] h-full flex flex-col justify-between flex-shrink-0">
+          {workType ? (
+            <div
+              className="flex-1 rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto"
+              style={{
+                background: '#faf6ed',
+                border: '1.5px solid #e8dcc3',
+                animation: 'slideUp 0.2s',
+              }}
+            >
+              <div>
+                <Label>対応時間</Label>
+                <SliderInput value={hours} onChange={setHours} showTicks={false} tight />
+              </div>
+
+              <div>
+                <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#9ca3af' }}>場所</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {locations.map((l) => (
+                    <Chip
+                      key={l.id}
+                      label={l.label}
+                      active={location === l.label}
+                      onClick={() => setLocation(l.label)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {isFloors && (
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: '1F', value: count1f, set: setCount1f },
+                    { label: '2F', value: count2f, set: setCount2f },
+                    { label: '3F', value: count3f, set: setCount3f },
+                    { label: '4F', value: count4f, set: setCount4f },
+                    { label: '5F', value: count5f, set: setCount5f },
+                    { label: '5F以上', value: count5fOver, set: setCount5fOver },
+                  ].map((f) => (
+                    <div key={f.label}>
+                      <p className="text-sm font-bold mb-1" style={{ color: '#b8963e' }}>{f.label}</p>
+                      <SliderInput
+                        value={f.value}
+                        onChange={f.set}
+                        min={0}
+                        max={150}
+                        step={1}
+                        unit="株"
+                        decimal={0}
+                        size="compact"
+                        showTicks={false}
+                        tight
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isBend && (
+                <div>
+                  <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>曲げ数</p>
+                  <SliderInput
+                    value={bendCount}
+                    onChange={setBendCount}
+                    min={0}
+                    max={300}
+                    step={1}
+                    unit="本"
+                    decimal={0}
+                    size="large"
+                    showTicks={false}
+                    tight
+                  />
+                </div>
+              )}
+
+              {isPole && (
+                <div>
+                  <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>立て数</p>
+                  <SliderInput
+                    value={poleCount}
+                    onChange={setPoleCount}
+                    min={0}
+                    max={300}
+                    step={1}
+                    unit="本"
+                    decimal={0}
+                    size="large"
+                    showTicks={false}
+                    tight
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className="flex-1 rounded-2xl flex items-center justify-center"
+              style={{ border: '2px dashed #e5e7eb' }}
+            >
+              <div className="text-center">
+                <p className="text-4xl mb-3">👈</p>
+                <p className="text-base" style={{ color: '#9ca3af' }}>
+                  作業内容を選択
+                </p>
+              </div>
+            </div>
+          )}
+
+          <button
+            disabled={!canSubmit}
+            onClick={() => setShowConfirm(true)}
+            className="py-4 mt-2 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25"
+            style={{
+              background: canSubmit ? '#b8963e' : '#e5e7eb',
+              boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
+              animation: canSubmit ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
+            }}
+          >
+            この内容で登録 ✓
+          </button>
+        </div>
       </div>
 
       {showConfirm && (
@@ -302,13 +353,23 @@ export default function WorkReport() {
           onCancel={() => setShowConfirm(false)}
         />
       )}
-      {showSuccess && (
+      {successMode === 'single' && (
         <SuccessOverlay
           emoji="🌸"
-          message="お疲れ様でした！"
+          message="登録しました！次の作業をどうぞ"
           onDone={() => {
-            setShowSuccess(false)
-            reset()
+            setSuccessMode(null)
+            resetWork()
+          }}
+        />
+      )}
+      {successMode === 'final' && (
+        <SuccessOverlay
+          emoji="🌸"
+          message={`本日の作業 計 ${totalHours.toFixed(1)}h　お疲れ様でした！`}
+          onDone={() => {
+            setSuccessMode(null)
+            resetAll()
           }}
         />
       )}
