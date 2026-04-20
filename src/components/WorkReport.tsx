@@ -18,10 +18,8 @@ function getToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// 作業名による入力項目分岐
+// 追加入力項目が出るのはこの2作業のみ
 const FLOOR_WORKS = ['胡蝶蘭作り', 'ミディ']
-const BEND_WORK = '曲げ'
-const POLE_WORK = '支柱立て'
 
 type SuccessMode = null | 'single' | 'final'
 
@@ -31,6 +29,7 @@ export default function WorkReport() {
   const { data: locations } = useLocationMaster()
   const workA = workTypes.filter((w) => w.category === 'A')
   const workB = workTypes.filter((w) => w.category === 'B')
+
   const [date, setDate] = useState(getToday)
   const [empId, setEmpId] = useState('')
   const [workType, setWorkType] = useState('')
@@ -52,8 +51,6 @@ export default function WorkReport() {
   const [finalizing, setFinalizing] = useState(false)
 
   const isFloors = FLOOR_WORKS.includes(workType)
-  const isBend = workType === BEND_WORK
-  const isPole = workType === POLE_WORK
 
   const canSubmit = Boolean(empId && workType && hours > 0 && location)
   const canFinalize = sessionCount > 0 && !finalizing
@@ -117,10 +114,6 @@ export default function WorkReport() {
       payload.plant_count_5f_over = count5fOver
       payload.bend_count = bendCount
       payload.pole_count = poleCount
-    } else if (isBend) {
-      payload.bend_count = bendCount
-    } else if (isPole) {
-      payload.pole_count = poleCount
     }
     const { error } = await supabase.from('work_reports').insert(payload)
     if (error) {
@@ -160,9 +153,9 @@ export default function WorkReport() {
       `1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver} 株`,
       `曲げ数: ${bendCount} 本 / 立て数: ${poleCount} 本`,
     ] : []),
-    ...(isBend ? [`曲げ数: ${bendCount} 本`] : []),
-    ...(isPole ? [`立て数: ${poleCount} 本`] : []),
   ]
+
+  const clamp150 = (v: number) => Math.min(150, Math.max(0, v))
 
   return (
     <div className="flex flex-col h-full gap-3" style={{ animation: 'fadeIn 0.3s' }}>
@@ -229,10 +222,10 @@ export default function WorkReport() {
         </div>
 
         {/* 右カラム: 詳細パネル + 登録ボタン */}
-        <div className="w-[450px] h-full flex flex-col justify-between flex-shrink-0">
+        <div className="w-[450px] h-full flex flex-col gap-2 flex-shrink-0">
           {workType ? (
             <div
-              className="flex-1 rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto"
+              className="flex-1 rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto min-h-0"
               style={{
                 background: '#faf6ed',
                 border: '1.5px solid #e8dcc3',
@@ -273,10 +266,10 @@ export default function WorkReport() {
                       ].map((f) => (
                         <div key={f.label} className="flex flex-col items-center gap-1">
                           <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>{f.label}</p>
-                          <div style={{ zoom: 0.88 }}>
+                          <div style={{ transform: 'scale(0.88)', transformOrigin: 'top center' }}>
                             <Stepper
                               value={f.value}
-                              onChange={(v) => f.set(Math.min(150, Math.max(0, v)))}
+                              onChange={(v) => f.set(clamp150(v))}
                             />
                           </div>
                         </div>
@@ -315,42 +308,6 @@ export default function WorkReport() {
                   </div>
                 </>
               )}
-
-              {isBend && (
-                <div>
-                  <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>曲げ数</p>
-                  <SliderInput
-                    value={bendCount}
-                    onChange={setBendCount}
-                    min={0}
-                    max={300}
-                    step={1}
-                    unit="本"
-                    decimal={0}
-                    size="large"
-                    showTicks={false}
-                    tight
-                  />
-                </div>
-              )}
-
-              {isPole && (
-                <div>
-                  <p className="text-lg font-bold mb-1" style={{ color: '#b8963e' }}>立て数</p>
-                  <SliderInput
-                    value={poleCount}
-                    onChange={setPoleCount}
-                    min={0}
-                    max={300}
-                    step={1}
-                    unit="本"
-                    decimal={0}
-                    size="large"
-                    showTicks={false}
-                    tight
-                  />
-                </div>
-              )}
             </div>
           ) : (
             <div
@@ -369,7 +326,7 @@ export default function WorkReport() {
           <button
             disabled={!canSubmit}
             onClick={() => setShowConfirm(true)}
-            className="py-4 mt-2 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25"
+            className="py-4 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25 flex-shrink-0"
             style={{
               background: canSubmit ? '#b8963e' : '#e5e7eb',
               boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
