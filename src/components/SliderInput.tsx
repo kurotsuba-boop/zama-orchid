@@ -8,7 +8,7 @@ type SliderInputProps = {
   step?: number
   unit?: string
   decimal?: number
-  size?: 'default' | 'compact' | 'large'
+  size?: 'default' | 'compact' | 'medium' | 'large'
   showTicks?: boolean
   tight?: boolean
 }
@@ -26,8 +26,14 @@ export default function SliderInput({
   tight = false,
 }: SliderInputProps) {
   const pct = ((value - min) / (max - min)) * 100
-  const valueCls = size === 'compact' ? 'text-xl' : size === 'large' ? 'text-6xl' : 'text-5xl'
-  const unitCls = size === 'compact' ? 'text-xs' : size === 'large' ? 'text-xl' : 'text-lg'
+  const valueCls = size === 'compact' ? 'text-xl'
+    : size === 'medium' ? 'text-3xl'
+    : size === 'large' ? 'text-6xl'
+    : 'text-5xl'
+  const unitCls = size === 'compact' ? 'text-xs'
+    : size === 'medium' ? 'text-sm'
+    : size === 'large' ? 'text-xl'
+    : 'text-lg'
 
   return (
     <div>

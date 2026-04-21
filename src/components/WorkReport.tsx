@@ -229,7 +229,7 @@ export default function WorkReport() {
         <div className="w-[450px] h-full flex flex-col gap-2 flex-shrink-0">
           {workType ? (
             <div
-              className="flex-1 rounded-2xl p-4 flex flex-col gap-2 overflow-y-auto min-h-0"
+              className="flex-1 min-h-0 rounded-2xl p-3 flex flex-col gap-1.5 overflow-hidden"
               style={{
                 background: '#faf6ed',
                 border: '1.5px solid #e8dcc3',
@@ -238,7 +238,7 @@ export default function WorkReport() {
             >
               <div>
                 <Label>対応時間</Label>
-                <SliderInput value={hours} onChange={setHours} showTicks={false} tight />
+                <SliderInput value={hours} onChange={setHours} size="medium" showTicks={false} tight />
               </div>
 
               <div>
@@ -257,8 +257,8 @@ export default function WorkReport() {
 
               {hasFloorCount && (
                 <div>
-                  <p className="text-base font-bold mb-1" style={{ color: '#b8963e' }}>株数</p>
-                  <div className="grid grid-cols-3 gap-1">
+                  <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>株数</p>
+                  <div className="grid grid-cols-3 gap-x-1 gap-y-0">
                     {[
                       { label: '1F', value: count1f, set: setCount1f },
                       { label: '2F', value: count2f, set: setCount2f },
@@ -268,8 +268,8 @@ export default function WorkReport() {
                       { label: '5F以上', value: count5fOver, set: setCount5fOver },
                     ].map((f) => (
                       <div key={f.label} className="flex flex-col items-center">
-                        <p className="text-xs font-bold leading-tight" style={{ color: '#9ca3af' }}>{f.label}</p>
-                        <div style={{ transform: 'scale(0.85)', transformOrigin: 'top center', height: '40px' }}>
+                        <p className="text-xs font-bold leading-none" style={{ color: '#9ca3af' }}>{f.label}</p>
+                        <div style={{ transform: 'scale(0.8)', transformOrigin: 'top center', height: '38px' }}>
                           <Stepper
                             value={f.value}
                             onChange={(v) => f.set(clamp150(v))}
@@ -282,10 +282,10 @@ export default function WorkReport() {
               )}
 
               {(hasBendCount || hasPoleCount) && (
-                <div className={`grid gap-3 ${hasBendCount && hasPoleCount ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div className={`grid gap-2 ${hasBendCount && hasPoleCount ? 'grid-cols-2' : 'grid-cols-1'}`}>
                   {hasBendCount && (
                     <div>
-                      <p className="text-base font-bold mb-1" style={{ color: '#b8963e' }}>曲げ数</p>
+                      <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>曲げ数</p>
                       <SliderInput
                         value={bendCount}
                         onChange={setBendCount}
@@ -302,7 +302,7 @@ export default function WorkReport() {
                   )}
                   {hasPoleCount && (
                     <div>
-                      <p className="text-base font-bold mb-1" style={{ color: '#b8963e' }}>立て数</p>
+                      <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>立て数</p>
                       <SliderInput
                         value={poleCount}
                         onChange={setPoleCount}
