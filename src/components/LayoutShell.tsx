@@ -19,6 +19,9 @@ const USER_TABS: TabDef[] = [
 ]
 
 const ADMIN_TABS: TabDef[] = [
+  { id: 'work', label: '作業報告', icon: '📋' },
+  { id: 'loss', label: 'ロス報告', icon: '⚠️' },
+  { id: 'timecard', label: 'タイムカード', icon: '⏰' },
   { id: 'analytics', label: '分析', icon: '📊' },
   { id: 'settings', label: '設定', icon: '⚙️' },
 ]
@@ -82,14 +85,12 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   const headerActiveTab = isAdmin ? 'settings' : activeTab
 
-  // user role のみヘッダーに従業員セレクター表示
-  const headerEmpProps = role === 'user'
-    ? {
-        employees: employees.map((e) => ({ id: e.id, name: e.name })),
-        selectedEmployeeId,
-        onEmployeeChange: setSelectedEmployeeId,
-      }
-    : {}
+  // admin / user 両方でヘッダーに従業員セレクター表示
+  const headerEmpProps = {
+    employees: employees.map((e) => ({ id: e.id, name: e.name })),
+    selectedEmployeeId,
+    onEmployeeChange: setSelectedEmployeeId,
+  }
 
   if (isAdmin) {
     if (role !== 'admin') return null
@@ -106,6 +107,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           activeTab={headerActiveTab}
           onTabChange={handleTabChange}
           showSettings={false}
+          {...headerEmpProps}
         />
         <div className="flex-1 px-6 py-4 overflow-hidden">{children}</div>
       </div>
@@ -128,25 +130,26 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         {...headerEmpProps}
       />
       <div className="flex-1 px-6 py-4 overflow-hidden">
-        {role === 'admin' ? (
+        {/* 入力系タブ: admin/user共通 */}
+        <div style={{ display: activeTab === 'work' ? 'block' : 'none', height: '100%' }}>
+          <WorkReport employeeId={selectedEmployeeId} />
+        </div>
+        <div style={{ display: activeTab === 'loss' ? 'block' : 'none', height: '100%' }}>
+          <LossReport employeeId={selectedEmployeeId} />
+        </div>
+        <div style={{ display: activeTab === 'timecard' ? 'block' : 'none', height: '100%' }}>
+          <TimecardView employeeId={selectedEmployeeId} />
+        </div>
+        {/* role別の分析タブ */}
+        {role === 'admin' && (
           <div style={{ display: activeTab === 'analytics' ? 'block' : 'none', height: '100%' }}>
             <AnalyticsView />
           </div>
-        ) : (
-          <>
-            <div style={{ display: activeTab === 'work' ? 'block' : 'none', height: '100%' }}>
-              <WorkReport employeeId={selectedEmployeeId} />
-            </div>
-            <div style={{ display: activeTab === 'loss' ? 'block' : 'none', height: '100%' }}>
-              <LossReport employeeId={selectedEmployeeId} />
-            </div>
-            <div style={{ display: activeTab === 'timecard' ? 'block' : 'none', height: '100%' }}>
-              <TimecardView employeeId={selectedEmployeeId} />
-            </div>
-            <div style={{ display: activeTab === 'my_analytics' ? 'block' : 'none', height: '100%' }}>
-              <MyAnalytics employeeId={selectedEmployeeId} />
-            </div>
-          </>
+        )}
+        {role === 'user' && (
+          <div style={{ display: activeTab === 'my_analytics' ? 'block' : 'none', height: '100%' }}>
+            <MyAnalytics employeeId={selectedEmployeeId} />
+          </div>
         )}
       </div>
     </div>
