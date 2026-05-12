@@ -266,6 +266,7 @@ function MasterPanel({
   extraColumns,
   extraFields,
   extraDefaults,
+  usageCheck,
 }: {
   title: string
   table: string
@@ -274,6 +275,7 @@ function MasterPanel({
   extraColumns?: { key: string; label: string; render: (item: MasterItem) => React.ReactNode }[]
   extraFields?: (form: any, setForm: (f: any) => void) => React.ReactNode
   extraDefaults?: Record<string, any>
+  usageCheck?: { table: string; column: string }
 }) {
   const supabase = createClient()
   const [editId, setEditId] = useState<string | null>(null)
@@ -318,6 +320,24 @@ function MasterPanel({
 
   const toggleActive = async (id: string, current: boolean) => {
     await supabase.from(table).update({ is_active: !current }).eq('id', id)
+    reload()
+  }
+
+  const handleDelete = async (item: MasterItem) => {
+    if (!window.confirm(`「${item.label}」を削除しますか？この操作は取り消せません`)) return
+    if (usageCheck) {
+      const { count, error } = await supabase
+        .from(usageCheck.table)
+        .select('id', { count: 'exact', head: true })
+        .eq(usageCheck.column, item.label)
+      if (error) { alert('使用状況の確認に失敗しました: ' + error.message); return }
+      if ((count || 0) > 0) {
+        alert('使用中のため削除できません。無効化してください。')
+        return
+      }
+    }
+    const { error } = await supabase.from(table).delete().eq('id', item.id)
+    if (error) { alert('削除に失敗しました: ' + error.message); return }
     reload()
   }
 
@@ -401,7 +421,7 @@ function MasterPanel({
               ))}
               <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>順序</th>
               <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#6b7280' }}>有効</th>
-              <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>操作</th>
+              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#6b7280' }}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -420,13 +440,22 @@ function MasterPanel({
                   </div>
                 </td>
                 <td className="text-center py-3 px-4">
-                  <button
-                    onClick={() => startEdit(item)}
-                    className="text-sm font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
-                    style={{ color: '#b8963e', background: '#faf6ed' }}
-                  >
-                    編集
-                  </button>
+                  <div className="flex justify-center gap-1.5">
+                    <button
+                      onClick={() => startEdit(item)}
+                      className="text-sm font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+                      style={{ color: '#b8963e', background: '#faf6ed' }}
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item)}
+                      className="text-xs font-bold px-2.5 py-1.5 rounded-lg active:scale-95 transition-all"
+                      style={{ color: '#dc2626', background: '#fef2f2' }}
+                    >
+                      削除
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -485,6 +514,23 @@ function EmployeePanel() {
 
   const toggleActive = async (id: string, current: boolean) => {
     await supabase.from('employees').update({ is_active: !current }).eq('id', id)
+    load()
+  }
+
+  const handleDelete = async (emp: Employee) => {
+    if (!window.confirm(`「${emp.name}」を削除しますか？この操作は取り消せません`)) return
+    const [w, l, t] = await Promise.all([
+      supabase.from('work_reports').select('id', { count: 'exact', head: true }).eq('employee_id', emp.id),
+      supabase.from('loss_reports').select('id', { count: 'exact', head: true }).eq('employee_id', emp.id),
+      supabase.from('timecards').select('id', { count: 'exact', head: true }).eq('employee_id', emp.id),
+    ])
+    const total = (w.count || 0) + (l.count || 0) + (t.count || 0)
+    if (total > 0) {
+      alert('この従業員には登録済みデータがあるため削除できません。無効化してください。')
+      return
+    }
+    const { error } = await supabase.from('employees').delete().eq('id', emp.id)
+    if (error) { alert('削除に失敗しました: ' + error.message); return }
     load()
   }
 
@@ -548,7 +594,7 @@ function EmployeePanel() {
               <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>氏名</th>
               <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>順序</th>
               <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#6b7280' }}>有効</th>
-              <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>操作</th>
+              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#6b7280' }}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -564,13 +610,22 @@ function EmployeePanel() {
                   </div>
                 </td>
                 <td className="text-center py-3 px-4">
-                  <button
-                    onClick={() => startEdit(emp)}
-                    className="text-sm font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
-                    style={{ color: '#b8963e', background: '#faf6ed' }}
-                  >
-                    編集
-                  </button>
+                  <div className="flex justify-center gap-1.5">
+                    <button
+                      onClick={() => startEdit(emp)}
+                      className="text-sm font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+                      style={{ color: '#b8963e', background: '#faf6ed' }}
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => handleDelete(emp)}
+                      className="text-xs font-bold px-2.5 py-1.5 rounded-lg active:scale-95 transition-all"
+                      style={{ color: '#dc2626', background: '#fef2f2' }}
+                    >
+                      削除
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -665,6 +720,7 @@ export default function AdminPage() {
             table="work_master"
             items={workMaster.data}
             reload={workMaster.reload}
+            usageCheck={{ table: 'work_reports', column: 'work_type' }}
             extraDefaults={{ category: 'B', has_floor_count: false, has_bend_count: false, has_pole_count: false }}
             extraColumns={[
               { key: 'category', label: 'カテゴリ', render: (item) => categoryBadge(item.category) },
@@ -711,6 +767,7 @@ export default function AdminPage() {
             table="location_master"
             items={locationMaster.data}
             reload={locationMaster.reload}
+            usageCheck={{ table: 'work_reports', column: 'location' }}
           />
         )}
 
@@ -720,6 +777,7 @@ export default function AdminPage() {
             table="variety_master"
             items={varietyMaster.data}
             reload={varietyMaster.reload}
+            usageCheck={{ table: 'loss_report_items', column: 'variety' }}
           />
         )}
 
@@ -729,6 +787,7 @@ export default function AdminPage() {
             table="loss_reason_master"
             items={lossReasonMaster.data}
             reload={lossReasonMaster.reload}
+            usageCheck={{ table: 'loss_report_items', column: 'reason' }}
             extraDefaults={{ loss_type: 'discard' }}
             extraColumns={[
               { key: 'loss_type', label: '種別', render: (item) => lossTypeBadge(item.loss_type) },
