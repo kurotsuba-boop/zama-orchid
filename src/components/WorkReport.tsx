@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
 import { useWorkMaster, useLocationMaster } from '@/hooks/useMaster'
@@ -17,7 +17,7 @@ function getToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-type SuccessMode = null | 'single' | 'final'
+type SuccessMode = null | 'create' | 'update'
 
 export default function WorkReport({ employeeId }: { employeeId: string }) {
   const { employees } = useEmployees()
@@ -43,18 +43,37 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
   const [poleCount, setPoleCount] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [successMode, setSuccessMode] = useState<SuccessMode>(null)
-  const [sessionCount, setSessionCount] = useState(0)
-  const [totalHours, setTotalHours] = useState(0)
-  const [finalizing, setFinalizing] = useState(false)
+  const [todayReports, setTodayReports] = useState<any[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  // 選択中の作業マスタからフラグを読み取る
   const currentWork = workTypes.find((w) => w.label === workType)
   const hasFloorCount = currentWork?.has_floor_count === true
   const hasBendCount = currentWork?.has_bend_count === true
   const hasPoleCount = currentWork?.has_pole_count === true
 
-  const canSubmit = Boolean(empId && workType && hours > 0 && location)
-  const canFinalize = sessionCount > 0 && !finalizing
+  const canSubmit = Boolean(empId && workType && hours > 0 && location && !submitting)
+
+  // 当日分の登録一覧取得
+  const fetchTodayReports = useCallback(async () => {
+    if (!empId || !date) {
+      setTodayReports([])
+      return
+    }
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('work_reports')
+      .select('*')
+      .eq('employee_id', empId)
+      .gte('reported_at', `${date}T00:00:00+09:00`)
+      .lte('reported_at', `${date}T23:59:59+09:00`)
+      .order('created_at', { ascending: true })
+    setTodayReports(data || [])
+  }, [empId, date])
+
+  useEffect(() => {
+    fetchTodayReports()
+  }, [fetchTodayReports])
 
   const resetSubCounts = () => {
     setCount1f(0); setCount2f(0); setCount3f(0); setCount4f(0); setCount5f(0); setCount5fOver(0)
@@ -68,14 +87,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
     setHours(3.0)
     setLocation('')
     resetSubCounts()
-  }
-
-  // 全体リセット（最終確定後）
-  const resetAll = () => {
-    setDate(getToday())
-    setSessionCount(0)
-    setTotalHours(0)
-    resetWork()
+    setEditingId(null)
   }
 
   const selectWork = (label: string, category: 'A' | 'B') => {
@@ -85,8 +97,44 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
     resetSubCounts()
   }
 
+  // 編集モード開始
+  const handleEdit = (r: any) => {
+    setEditingId(r.id)
+    setWorkType(r.work_type)
+    setWorkCategory(r.work_category)
+    setHours(Number(r.hours))
+    setLocation(r.location || '')
+    setCount1f(r.plant_count_1f ?? 0)
+    setCount2f(r.plant_count_2f ?? 0)
+    setCount3f(r.plant_count_3f ?? 0)
+    setCount4f(r.plant_count_4f ?? 0)
+    setCount5f(r.plant_count_5f ?? 0)
+    setCount5fOver(r.plant_count_5f_over ?? 0)
+    setBendCount(r.bend_count ?? 0)
+    setPoleCount(r.pole_count ?? 0)
+  }
+
+  const cancelEdit = () => {
+    resetWork()
+  }
+
+  // 削除
+  const handleDelete = async (r: any) => {
+    if (!window.confirm(`「${r.work_type}」の作業記録を削除しますか？`)) return
+    const supabase = createClient()
+    const { error } = await supabase.from('work_reports').delete().eq('id', r.id)
+    if (error) {
+      alert('削除に失敗しました: ' + error.message)
+      return
+    }
+    // 編集中のものを削除した場合はフォームもクリア
+    if (editingId === r.id) resetWork()
+    await fetchTodayReports()
+  }
+
   const handleSubmit = async () => {
     setShowConfirm(false)
+    setSubmitting(true)
     const supabase = createClient()
     const payload: any = {
       reported_at: `${date}T00:00:00+09:00`,
@@ -119,33 +167,27 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
     if (hasPoleCount) {
       payload.pole_count = poleCount
     }
-    const { error } = await supabase.from('work_reports').insert(payload)
-    if (error) {
-      alert('登録に失敗しました: ' + error.message)
-      return
-    }
-    setSessionCount((c) => c + 1)
-    setSuccessMode('single')
-  }
 
-  const handleFinalize = async () => {
-    if (!canFinalize) return
-    setFinalizing(true)
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('work_reports')
-      .select('hours')
-      .eq('employee_id', empId)
-      .gte('reported_at', `${date}T00:00:00+09:00`)
-      .lte('reported_at', `${date}T23:59:59+09:00`)
-    setFinalizing(false)
+    let error
+    if (editingId) {
+      const { error: e } = await supabase
+        .from('work_reports')
+        .update(payload)
+        .eq('id', editingId)
+      error = e
+    } else {
+      const { error: e } = await supabase.from('work_reports').insert(payload)
+      error = e
+    }
+
+    setSubmitting(false)
     if (error) {
-      alert('合計取得に失敗しました: ' + error.message)
+      alert(`${editingId ? '更新' : '登録'}に失敗しました: ` + error.message)
       return
     }
-    const sum = (data || []).reduce((a, r: any) => a + (Number(r.hours) || 0), 0)
-    setTotalHours(sum)
-    setSuccessMode('final')
+    const wasEdit = !!editingId
+    await fetchTodayReports()
+    setSuccessMode(wasEdit ? 'update' : 'create')
   }
 
   const empName = employees.find((e) => e.id === empId)?.name || ''
@@ -159,6 +201,28 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
   ]
 
   const clamp150 = (v: number) => Math.min(150, Math.max(0, v))
+
+  // 当日合計時間
+  const todaySumHours = todayReports.reduce((s, r) => s + Number(r.hours || 0), 0)
+
+  // カード用のサブ情報サマリ
+  const summarizeExtras = (r: any) => {
+    const parts: string[] = []
+    const floors = [
+      ['1F', r.plant_count_1f],
+      ['2F', r.plant_count_2f],
+      ['3F', r.plant_count_3f],
+      ['4F', r.plant_count_4f],
+      ['5F', r.plant_count_5f],
+      ['5F+', r.plant_count_5f_over],
+    ].filter(([, v]) => v && Number(v) > 0)
+    if (floors.length > 0) {
+      parts.push('株: ' + floors.map(([k, v]) => `${k}${v}`).join('/'))
+    }
+    if (r.bend_count && Number(r.bend_count) > 0) parts.push(`曲げ${r.bend_count}本`)
+    if (r.pole_count && Number(r.pole_count) > 0) parts.push(`立て${r.pole_count}本`)
+    return parts.join(' · ')
+  }
 
   if (!empId) {
     return (
@@ -178,21 +242,95 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
 
   return (
     <div className="flex flex-col h-full gap-3" style={{ animation: 'fadeIn 0.3s' }}>
-      {/* 最終確定ボタン（右上） */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleFinalize}
-          disabled={!canFinalize}
-          className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{
-            background: '#ffffff',
-            color: '#b8963e',
-            border: '1.5px solid #b8963e',
-          }}
+      {/* 本日の登録済作業バー（0件なら非表示） */}
+      {todayReports.length > 0 && (
+        <div
+          className="rounded-xl px-4 py-2.5 flex-shrink-0"
+          style={{ background: '#faf6ed', border: '1.5px solid #e8dcc3' }}
         >
-          ✓ 最終確定{sessionCount > 0 ? `（${sessionCount}件登録済み）` : ''}
-        </button>
-      </div>
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-xs font-bold tracking-[0.15em]" style={{ color: '#b8963e' }}>
+              本日の登録済作業（{todayReports.length}件）
+            </p>
+            <p
+              className="text-sm font-bold"
+              style={{ color: '#b8963e', fontFamily: "'DM Mono', monospace" }}
+            >
+              計 {todaySumHours.toFixed(1)}h
+            </p>
+          </div>
+          <div className="flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: '110px' }}>
+            {todayReports.map((r) => {
+              const isEditing = editingId === r.id
+              const extras = summarizeExtras(r)
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center gap-3 px-3 py-1.5 rounded-lg"
+                  style={{
+                    background: '#ffffff',
+                    border: isEditing ? '1.5px solid #b8963e' : '1px solid #e5e7eb',
+                  }}
+                >
+                  <span className="text-base flex-shrink-0" style={{ color: '#b8963e' }}>•</span>
+                  <div className="flex-1 min-w-0 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-semibold" style={{ color: '#1f2937' }}>
+                      {r.work_type}
+                    </span>
+                    <span
+                      className="text-sm font-bold whitespace-nowrap"
+                      style={{ color: '#b8963e', fontFamily: "'DM Mono', monospace" }}
+                    >
+                      {Number(r.hours).toFixed(1)}h
+                    </span>
+                    <span className="text-xs whitespace-nowrap" style={{ color: '#6b7280' }}>
+                      {r.location}
+                    </span>
+                    {extras && (
+                      <span className="text-xs whitespace-nowrap" style={{ color: '#9ca3af' }}>
+                        {extras}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => handleEdit(r)}
+                      className="text-xs font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-all"
+                      style={{ color: '#b8963e', background: '#faf6ed', border: '1px solid #e8dcc3' }}
+                    >
+                      修正
+                    </button>
+                    <button
+                      onClick={() => handleDelete(r)}
+                      className="text-xs font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-all"
+                      style={{ color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca' }}
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 編集中バッジ */}
+      {editingId && (
+        <div
+          className="rounded-lg px-4 py-2 flex items-center justify-between flex-shrink-0"
+          style={{ background: '#b8963e', color: '#fff' }}
+        >
+          <span className="text-sm font-bold">✏ 編集中</span>
+          <button
+            onClick={cancelEdit}
+            className="text-xs font-bold underline active:scale-95"
+            style={{ color: '#fff' }}
+          >
+            編集をキャンセル
+          </button>
+        </div>
+      )}
 
       {/* メイン2カラム */}
       <div className="flex gap-8 flex-1 min-h-0">
@@ -346,10 +484,10 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
             style={{
               background: canSubmit ? '#b8963e' : '#e5e7eb',
               boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
-              animation: canSubmit ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
+              animation: canSubmit && !editingId ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
             }}
           >
-            この内容で登録 ✓
+            {editingId ? '更新する' : 'この内容で登録 ✓'}
           </button>
         </div>
       </div>
@@ -361,7 +499,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
           onCancel={() => setShowConfirm(false)}
         />
       )}
-      {successMode === 'single' && (
+      {successMode === 'create' && (
         <SuccessOverlay
           emoji="🌸"
           message="登録しました！次の作業をどうぞ"
@@ -371,13 +509,13 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
           }}
         />
       )}
-      {successMode === 'final' && (
+      {successMode === 'update' && (
         <SuccessOverlay
-          emoji="🌸"
-          message={`本日の作業 計 ${totalHours.toFixed(1)}h　お疲れ様でした！`}
+          emoji="✨"
+          message="更新しました！"
           onDone={() => {
             setSuccessMode(null)
-            resetAll()
+            resetWork()
           }}
         />
       )}
