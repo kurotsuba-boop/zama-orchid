@@ -67,45 +67,47 @@ export default function EmployeeSelectModal({ value, onChange, options, placehol
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="rounded-3xl p-6 max-w-md w-full mx-4 shadow-2xl flex flex-col"
+            className="rounded-3xl p-6 max-w-2xl w-full mx-4 shadow-2xl flex flex-col"
             style={{ background: '#ffffff', animation: 'slideUp 0.25s ease', maxHeight: '80vh' }}
           >
             <p className="text-lg font-bold mb-4 px-2" style={{ color: '#1f2937' }}>
               担当氏名を選択
             </p>
 
-            <div className="overflow-y-auto flex-1 flex flex-col gap-2" style={{ maxHeight: '60vh' }}>
+            <div className="overflow-y-auto flex-1" style={{ maxHeight: '60vh' }}>
               {options.length === 0 ? (
                 <p className="text-center py-8 text-base" style={{ color: '#9ca3af' }}>
                   選択肢がありません
                 </p>
               ) : (
-                options.map((o) => {
-                  const isActive = o.id === value
-                  return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => handleSelect(o.id)}
-                      className="w-full py-4 px-5 rounded-xl text-lg font-semibold text-left active:scale-[0.98] transition-all"
-                      style={
-                        isActive
-                          ? {
-                              background: '#b8963e',
-                              color: '#fff',
-                              boxShadow: '0 2px 12px rgba(184,150,62,0.3)',
-                            }
-                          : {
-                              background: '#ffffff',
-                              color: '#1f2937',
-                              border: '1.5px solid #e5e7eb',
-                            }
-                      }
-                    >
-                      {o.name}
-                    </button>
-                  )
-                })
+                <div className="grid grid-cols-3 gap-2">
+                  {options.map((o) => {
+                    const isActive = o.id === value
+                    return (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => handleSelect(o.id)}
+                        className="w-full py-4 px-3 rounded-xl text-lg font-semibold text-center active:scale-[0.98] transition-all truncate"
+                        style={
+                          isActive
+                            ? {
+                                background: '#b8963e',
+                                color: '#fff',
+                                boxShadow: '0 2px 12px rgba(184,150,62,0.3)',
+                              }
+                            : {
+                                background: '#ffffff',
+                                color: '#1f2937',
+                                border: '1.5px solid #e5e7eb',
+                              }
+                        }
+                      >
+                        {o.name}
+                      </button>
+                    )
+                  })}
+                </div>
               )}
             </div>
 
