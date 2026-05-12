@@ -16,6 +16,34 @@ import { createClient } from '@/lib/supabase'
 const COLORS = ['#b8963e', '#d4b96a', '#8b6f2f', '#c4a854', '#6b7280']
 const COLORS_EXTENDED = [...COLORS, '#9ca3af', '#78716c', '#a8a29e', '#d97706', '#dc2626']
 
+// ── CSV ユーティリティ ──
+function downloadCsv(filename: string, rows: (string | number | null | undefined)[][]) {
+  const bom = '﻿'
+  const csv = rows
+    .map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function CsvButton({ onClick, loading }: { onClick: () => void; loading?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="px-4 py-2 rounded-lg text-sm font-bold active:scale-95 transition-all disabled:opacity-40 whitespace-nowrap"
+      style={{ background: '#ffffff', color: '#b8963e', border: '1.5px solid #b8963e' }}
+    >
+      {loading ? '取得中…' : '📥 ローデータCSV'}
+    </button>
+  )
+}
+
 // ── ユーティリティ ──
 function getToday() {
   const d = new Date()
@@ -302,11 +330,48 @@ function WorkTimeSummary() {
     return Math.round(sum * 10) / 10
   }, [byType])
 
+  const [csvLoading, setCsvLoading] = useState(false)
+  const downloadWorkCsv = async () => {
+    setCsvLoading(true)
+    const [from, to] = periodState.range()
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('work_reports')
+      .select('reported_at, work_type, work_category, hours, location, plant_count_1f, plant_count_2f, plant_count_3f, plant_count_4f, plant_count_5f, plant_count_5f_over, unit_count, bend_count, pole_count, created_at, employees(name)')
+      .gte('reported_at', `${from}T00:00:00+09:00`)
+      .lte('reported_at', `${to}T23:59:59+09:00`)
+      .order('reported_at')
+    setCsvLoading(false)
+    if (error) { alert('CSV取得に失敗しました: ' + error.message); return }
+    if (!data || data.length === 0) { alert('データがありません'); return }
+    const header = [
+      '日付', '時刻', '氏名', '作業内容', 'カテゴリ', '時間(h)', '場所',
+      '個数1F', '個数2F', '個数3F', '個数4F', '個数5F', '個数5F+',
+      '個数(スライダー)', '曲げ数', '立て数', '登録日時',
+    ]
+    const rows = data.map((r: any) => {
+      const dt = new Date(r.reported_at)
+      const date = `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`
+      const time = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`
+      const created = r.created_at ? new Date(r.created_at).toLocaleString('ja-JP') : ''
+      return [
+        date, time, r.employees?.name || '', r.work_type, r.work_category, r.hours, r.location ?? '',
+        r.plant_count_1f ?? '', r.plant_count_2f ?? '', r.plant_count_3f ?? '',
+        r.plant_count_4f ?? '', r.plant_count_5f ?? '', r.plant_count_5f_over ?? '',
+        r.unit_count ?? '', r.bend_count ?? '', r.pole_count ?? '', created,
+      ]
+    })
+    downloadCsv(`作業時間ローデータ_${from}_${to}.csv`, [header, ...rows])
+  }
+
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>
-        <span className="mr-2">⏱</span>作業時間サマリ
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#1f2937' }}>
+          <span className="mr-2">⏱</span>作業時間サマリ
+        </h2>
+        <CsvButton onClick={downloadWorkCsv} loading={csvLoading} />
+      </div>
       <PeriodSelector {...periodState} />
 
       {loading ? (
@@ -455,11 +520,66 @@ function LossAnalysis() {
     </div>
   )
 
+  const [csvLoading, setCsvLoading] = useState(false)
+  const downloadLossCsv = async () => {
+    setCsvLoading(true)
+    const [from, to] = periodState.range()
+    const supabase = createClient()
+    const { data: reps, error: e1 } = await supabase
+      .from('loss_reports')
+      .select('id, work_date, employee_id, greenhouses, positions, seedling_arrival_date, memo, created_at, employees(name)')
+      .gte('work_date', from)
+      .lte('work_date', to)
+      .order('work_date')
+    if (e1) { setCsvLoading(false); alert('CSV取得に失敗しました: ' + e1.message); return }
+    if (!reps || reps.length === 0) { setCsvLoading(false); alert('データがありません'); return }
+    const ids = reps.map((r: any) => r.id)
+    const { data: items, error: e2 } = await supabase
+      .from('loss_report_items')
+      .select('loss_report_id, variety, loss_type, reason, quantity')
+      .in('loss_report_id', ids)
+    setCsvLoading(false)
+    if (e2) { alert('明細取得に失敗しました: ' + e2.message); return }
+
+    const header = ['作業日', '氏名', '温室', '作業区域', '苗入荷日', '品種', '破棄/B・C品', '理由', '数量', 'メモ', '登録日時']
+    const rows: (string | number | null)[][] = []
+    reps.forEach((r: any) => {
+      const repItems = (items || []).filter((i: any) => i.loss_report_id === r.id)
+      const base = [
+        r.work_date,
+        r.employees?.name || '',
+        (r.greenhouses || []).join('/'),
+        (r.positions || []).join('/'),
+        r.seedling_arrival_date || '',
+      ]
+      const created = r.created_at ? new Date(r.created_at).toLocaleString('ja-JP') : ''
+      if (repItems.length === 0) {
+        rows.push([...base, '', '', '', '', r.memo || '', created])
+      } else {
+        repItems.forEach((i: any) => {
+          rows.push([
+            ...base,
+            i.variety,
+            i.loss_type === 'discard' ? '破棄' : 'B・C品',
+            i.reason,
+            i.quantity,
+            r.memo || '',
+            created,
+          ])
+        })
+      }
+    })
+    downloadCsv(`ロス報告ローデータ_${from}_${to}.csv`, [header, ...rows])
+  }
+
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>
-        <span className="mr-2">⚠️</span>ロス分析
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#1f2937' }}>
+          <span className="mr-2">⚠️</span>ロス分析
+        </h2>
+        <CsvButton onClick={downloadLossCsv} loading={csvLoading} />
+      </div>
       <PeriodSelector {...periodState} />
 
       {loading ? (
@@ -597,11 +717,47 @@ function AttendanceSummary() {
     )
   }
 
+  const [csvLoading, setCsvLoading] = useState(false)
+  const downloadAttCsv = async () => {
+    setCsvLoading(true)
+    const from = `${year}-${String(month).padStart(2,'0')}-01`
+    const lastDay = new Date(year, month, 0).getDate()
+    const to = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`
+    const supabase = createClient()
+    const { data: tcs, error } = await supabase
+      .from('timecards')
+      .select('work_date, clock_in, clock_out, employees(name)')
+      .gte('work_date', from)
+      .lte('work_date', to)
+      .order('work_date')
+    setCsvLoading(false)
+    if (error) { alert('CSV取得に失敗しました: ' + error.message); return }
+    if (!tcs || tcs.length === 0) { alert('データがありません'); return }
+    const header = ['日付', '氏名', '出勤時刻', '退勤時刻', '勤務時間(h)']
+    const fmtT = (iso: string | null) => {
+      if (!iso) return ''
+      const d = new Date(iso)
+      return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+    }
+    const rows = tcs.map((t: any) => {
+      let h: string | number = ''
+      if (t.clock_in && t.clock_out) {
+        const diff = (new Date(t.clock_out).getTime() - new Date(t.clock_in).getTime()) / 3600000
+        h = (Math.round(diff * 10) / 10).toFixed(1)
+      }
+      return [t.work_date, t.employees?.name || '', fmtT(t.clock_in), fmtT(t.clock_out), h]
+    })
+    downloadCsv(`タイムカードローデータ_${year}-${String(month).padStart(2,'0')}.csv`, [header, ...rows])
+  }
+
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>
-        <span className="mr-2">⏰</span>出勤状況
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#1f2937' }}>
+          <span className="mr-2">⏰</span>出勤状況
+        </h2>
+        <CsvButton onClick={downloadAttCsv} loading={csvLoading} />
+      </div>
 
       <div className="flex items-center gap-4 mb-6">
         <button
