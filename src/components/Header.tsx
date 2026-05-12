@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import EmployeeSelectModal from './EmployeeSelectModal'
 
 export type TabDef = { id: string; label: string; icon: string }
 
@@ -11,9 +12,20 @@ type HeaderProps = {
   activeTab: string
   onTabChange: (tab: string) => void
   showSettings?: boolean
+  employees?: { id: string; name: string }[]
+  selectedEmployeeId?: string
+  onEmployeeChange?: (id: string) => void
 }
 
-export default function Header({ tabs, activeTab, onTabChange, showSettings = true }: HeaderProps) {
+export default function Header({
+  tabs,
+  activeTab,
+  onTabChange,
+  showSettings = true,
+  employees,
+  selectedEmployeeId,
+  onEmployeeChange,
+}: HeaderProps) {
   const router = useRouter()
   const [clock, setClock] = useState('')
 
@@ -41,11 +53,22 @@ export default function Header({ tabs, activeTab, onTabChange, showSettings = tr
       className="flex items-center justify-between px-6 flex-shrink-0"
       style={{ height: '60px', background: '#ffffff', borderBottom: '1px solid #e5e7eb' }}
     >
-      <div className="flex items-center gap-2">
-        <span className="text-lg">🌸</span>
-        <span className="text-sm font-bold tracking-wider whitespace-nowrap" style={{ color: '#1f2937' }}>
-          座間洋ランセンター
-        </span>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🌸</span>
+          <span className="text-sm font-bold tracking-wider whitespace-nowrap" style={{ color: '#1f2937' }}>
+            座間洋ランセンター
+          </span>
+        </div>
+        {employees && onEmployeeChange && (
+          <EmployeeSelectModal
+            compact
+            value={selectedEmployeeId || ''}
+            onChange={onEmployeeChange}
+            options={employees}
+            placeholder="担当者を選択"
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#f5f3ef' }}>

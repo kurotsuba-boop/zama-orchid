@@ -7,9 +7,10 @@ type Props = {
   onChange: (v: string) => void
   options: { id: string; name: string }[]
   placeholder: string
+  compact?: boolean
 }
 
-export default function EmployeeSelectModal({ value, onChange, options, placeholder }: Props) {
+export default function EmployeeSelectModal({ value, onChange, options, placeholder, compact = false }: Props) {
   const [open, setOpen] = useState(false)
   const selected = options.find((o) => o.id === value)
 
@@ -20,21 +21,39 @@ export default function EmployeeSelectModal({ value, onChange, options, placehol
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-full px-5 py-4 text-lg font-medium rounded-xl focus:outline-none cursor-pointer text-left flex items-center justify-between active:scale-[0.99] transition-transform"
-        style={{
-          background: '#ffffff',
-          color: selected ? '#1f2937' : '#9ca3af',
-          border: '1.5px solid #e5e7eb',
-        }}
-      >
-        <span className="truncate">{selected ? selected.name : placeholder}</span>
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="#9ca3af" className="flex-shrink-0 ml-2">
-          <path d="M4 7l5 5 5-5z" />
-        </svg>
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all whitespace-nowrap"
+          style={{
+            background: '#ffffff',
+            color: selected ? '#b8963e' : '#9ca3af',
+            border: `1.5px solid ${selected ? '#e8dcc3' : '#e5e7eb'}`,
+          }}
+        >
+          <span className="truncate max-w-[140px]">{selected ? selected.name : placeholder}</span>
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor" className="flex-shrink-0">
+            <path d="M4 7l5 5 5-5z" />
+          </svg>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full px-5 py-4 text-lg font-medium rounded-xl focus:outline-none cursor-pointer text-left flex items-center justify-between active:scale-[0.99] transition-transform"
+          style={{
+            background: '#ffffff',
+            color: selected ? '#1f2937' : '#9ca3af',
+            border: '1.5px solid #e5e7eb',
+          }}
+        >
+          <span className="truncate">{selected ? selected.name : placeholder}</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="#9ca3af" className="flex-shrink-0 ml-2">
+            <path d="M4 7l5 5 5-5z" />
+          </svg>
+        </button>
+      )}
 
       {open && (
         <div

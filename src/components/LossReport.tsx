@@ -7,7 +7,6 @@ import { GREENHOUSES, POSITIONS } from '@/lib/constants'
 import { useVarietyMaster, useLossReasonMaster } from '@/hooks/useMaster'
 import Chip from '@/components/Chip'
 import Stepper from '@/components/Stepper'
-import EmployeeSelectModal from '@/components/EmployeeSelectModal'
 import Label from '@/components/Label'
 import DatePicker from '@/components/DatePicker'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -25,14 +24,14 @@ type LossData = {
   }
 }
 
-export default function LossReport() {
+export default function LossReport({ employeeId }: { employeeId: string }) {
   const { employees } = useEmployees()
   const { data: varieties } = useVarietyMaster()
   const { data: discardReasons } = useLossReasonMaster('discard')
   const { data: downgradeReasons } = useLossReasonMaster('downgrade')
   const [workDate, setWorkDate] = useState(getToday)
   const [arrivalDate, setArrivalDate] = useState('')
-  const [empId, setEmpId] = useState('')
+  const empId = employeeId
   const [greenhouses, setGreenhouses] = useState<string[]>([])
   const [positions, setPositions] = useState<string[]>([])
   const [memo, setMemo] = useState('')
@@ -142,7 +141,6 @@ export default function LossReport() {
   const reset = () => {
     setWorkDate(getToday())
     setArrivalDate('')
-    setEmpId('')
     setGreenhouses([])
     setPositions([])
     setMemo('')
@@ -167,6 +165,22 @@ export default function LossReport() {
     ...(memo ? [`メモ: ${memo}`] : []),
   ]
 
+  if (!empId) {
+    return (
+      <div className="flex items-center justify-center h-full" style={{ animation: 'fadeIn 0.3s' }}>
+        <div className="text-center">
+          <p className="text-6xl mb-4">👤</p>
+          <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+            担当者を選択してください
+          </p>
+          <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+            ヘッダーの「担当者を選択」をタップ
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex gap-4 h-full" style={{ animation: 'fadeIn 0.3s' }}>
       {/* 左カラム: 基本情報 */}
@@ -174,16 +188,6 @@ export default function LossReport() {
         className="w-64 flex flex-col gap-3 flex-shrink-0 overflow-y-auto pr-2"
         style={{ maxHeight: 'calc(100vh - 92px)' }}
       >
-        <div>
-          <Label>担当氏名</Label>
-          <EmployeeSelectModal
-            value={empId}
-            onChange={setEmpId}
-            options={employees.map((e) => ({ id: e.id, name: e.name }))}
-            placeholder="名前を選択"
-          />
-        </div>
-
         <div className="flex flex-col gap-3">
           <div>
             <Label>作業日</Label>

@@ -6,7 +6,6 @@ import { useEmployees } from '@/hooks/useEmployees'
 import { useWorkMaster, useLocationMaster } from '@/hooks/useMaster'
 import Chip from '@/components/Chip'
 import SliderInput from '@/components/SliderInput'
-import EmployeeSelectModal from '@/components/EmployeeSelectModal'
 import Label from '@/components/Label'
 import DatePicker from '@/components/DatePicker'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -20,15 +19,16 @@ function getToday() {
 
 type SuccessMode = null | 'single' | 'final'
 
-export default function WorkReport() {
+export default function WorkReport({ employeeId }: { employeeId: string }) {
   const { employees } = useEmployees()
   const { data: workTypes } = useWorkMaster()
   const { data: locations } = useLocationMaster()
   const workA = workTypes.filter((w) => w.category === 'A')
   const workB = workTypes.filter((w) => w.category === 'B')
 
+  const empId = employeeId
+
   const [date, setDate] = useState(getToday)
-  const [empId, setEmpId] = useState('')
   const [workType, setWorkType] = useState('')
   const [workCategory, setWorkCategory] = useState<'A' | 'B' | ''>('')
   const [hours, setHours] = useState(3.0)
@@ -73,7 +73,6 @@ export default function WorkReport() {
   // 全体リセット（最終確定後）
   const resetAll = () => {
     setDate(getToday())
-    setEmpId('')
     setSessionCount(0)
     setTotalHours(0)
     resetWork()
@@ -161,6 +160,22 @@ export default function WorkReport() {
 
   const clamp150 = (v: number) => Math.min(150, Math.max(0, v))
 
+  if (!empId) {
+    return (
+      <div className="flex items-center justify-center h-full" style={{ animation: 'fadeIn 0.3s' }}>
+        <div className="text-center">
+          <p className="text-6xl mb-4">👤</p>
+          <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+            担当者を選択してください
+          </p>
+          <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+            ヘッダーの「担当者を選択」をタップ
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full gap-3" style={{ animation: 'fadeIn 0.3s' }}>
       {/* 最終確定ボタン（右上） */}
@@ -183,16 +198,6 @@ export default function WorkReport() {
       <div className="flex gap-8 flex-1 min-h-0">
         {/* 左カラム: 入力 */}
         <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3">
-          <div>
-            <Label>担当氏名</Label>
-            <EmployeeSelectModal
-              value={empId}
-              onChange={setEmpId}
-              options={employees.map((e) => ({ id: e.id, name: e.name }))}
-              placeholder="名前を選択してください"
-            />
-          </div>
-
           <div>
             <Label>日付</Label>
             <DatePicker value={date} onChange={setDate} />

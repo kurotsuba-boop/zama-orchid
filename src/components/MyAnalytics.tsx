@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
-import EmployeeSelectModal from '@/components/EmployeeSelectModal'
-import Label from '@/components/Label'
 
 function pad(n: number) {
   return String(n).padStart(2, '0')
@@ -37,9 +35,9 @@ function getMonthLastDay() {
   return formatDate(last)
 }
 
-export default function MyAnalytics() {
+export default function MyAnalytics({ employeeId }: { employeeId: string }) {
   const { employees } = useEmployees()
-  const [empId, setEmpId] = useState('')
+  const empId = employeeId
   const [weekHours, setWeekHours] = useState(0)
   const [byType, setByType] = useState<{ name: string; hours: number }[]>([])
   const [monthDays, setMonthDays] = useState(0)
@@ -100,32 +98,26 @@ export default function MyAnalytics() {
 
   const empName = employees.find((e) => e.id === empId)?.name || ''
 
+  if (!empId) {
+    return (
+      <div className="flex items-center justify-center h-full" style={{ animation: 'fadeIn 0.3s' }}>
+        <div className="text-center">
+          <p className="text-6xl mb-4">👤</p>
+          <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+            担当者を選択してください
+          </p>
+          <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+            ヘッダーの「担当者を選択」をタップ
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full overflow-y-auto" style={{ animation: 'fadeIn 0.3s' }}>
       <div className="max-w-3xl mx-auto flex flex-col gap-4">
-        <div className="max-w-sm">
-          <Label>担当氏名</Label>
-          <EmployeeSelectModal
-            value={empId}
-            onChange={setEmpId}
-            options={employees.map((e) => ({ id: e.id, name: e.name }))}
-            placeholder="名前を選択してください"
-          />
-        </div>
-
-        {!empId ? (
-          <div
-            className="flex items-center justify-center rounded-2xl"
-            style={{ height: '320px', border: '2px dashed #e5e7eb' }}
-          >
-            <div className="text-center">
-              <p className="text-5xl mb-3">📊</p>
-              <p className="text-base" style={{ color: '#9ca3af' }}>
-                名前を選択してください
-              </p>
-            </div>
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div className="text-center py-12" style={{ color: '#9ca3af' }}>
             読み込み中...
           </div>

@@ -9,6 +9,7 @@ import TimecardView from './TimecardView'
 import AnalyticsView from './AnalyticsView'
 import MyAnalytics from './MyAnalytics'
 import { useUserRole } from '@/hooks/useUserRole'
+import { useEmployees } from '@/hooks/useEmployees'
 
 const USER_TABS: TabDef[] = [
   { id: 'work', label: '作業報告', icon: '📋' },
@@ -26,19 +27,19 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router = useRouter()
   const { role, loading } = useUserRole()
+  const { employees } = useEmployees()
   const isLogin = pathname === '/login'
   const isAdmin = pathname === '/admin'
 
   const [activeTab, setActiveTab] = useState<string>('work')
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('')
 
-  // role が判明したらデフォルトタブを切り替え
   useEffect(() => {
     if (!role) return
     if (role === 'admin') setActiveTab('analytics')
     else setActiveTab('work')
   }, [role])
 
-  // user role が /admin に来たら / に追い出す
   useEffect(() => {
     if (loading) return
     if (isAdmin && role === 'user') {
@@ -50,7 +51,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     return <>{children}</>
   }
 
-  // role 取得中
   if (loading || !role) {
     return (
       <div className="h-screen flex items-center justify-center" style={{ background: '#fafaf8' }}>
@@ -62,12 +62,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const tabs = role === 'admin' ? ADMIN_TABS : USER_TABS
 
   const handleTabChange = (tabId: string) => {
-    // 「設定」タブは /admin へ遷移
     if (role === 'admin' && tabId === 'settings') {
       if (!isAdmin) router.push('/admin')
       return
     }
-    // /admin から他タブに移る場合は / へ戻してから state を切り替え
     if (isAdmin) {
       setActiveTab(tabId)
       router.push('/')
@@ -76,12 +74,18 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     setActiveTab(tabId)
   }
 
-  // /admin にいる時の active タブ表示
   const headerActiveTab = isAdmin ? 'settings' : activeTab
 
-  // /admin ルート: ヘッダー + children (admin page content)
+  // user role のみヘッダーに従業員セレクター表示
+  const headerEmpProps = role === 'user'
+    ? {
+        employees: employees.map((e) => ({ id: e.id, name: e.name })),
+        selectedEmployeeId,
+        onEmployeeChange: setSelectedEmployeeId,
+      }
+    : {}
+
   if (isAdmin) {
-    // user role なら何も描画しない（redirect 中）
     if (role !== 'admin') return null
     return (
       <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#fafaf8' }}>
@@ -96,7 +100,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     )
   }
 
-  // メイン: state ベースのタブ切替
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#fafaf8' }}>
       <Header
@@ -104,6 +107,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         activeTab={headerActiveTab}
         onTabChange={handleTabChange}
         showSettings={false}
+        {...headerEmpProps}
       />
       <div className="flex-1 px-6 py-4 overflow-hidden">
         {role === 'admin' ? (
@@ -113,16 +117,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         ) : (
           <>
             <div style={{ display: activeTab === 'work' ? 'block' : 'none', height: '100%' }}>
-              <WorkReport />
+              <WorkReport employeeId={selectedEmployeeId} />
             </div>
             <div style={{ display: activeTab === 'loss' ? 'block' : 'none', height: '100%' }}>
-              <LossReport />
+              <LossReport employeeId={selectedEmployeeId} />
             </div>
             <div style={{ display: activeTab === 'timecard' ? 'block' : 'none', height: '100%' }}>
-              <TimecardView />
+              <TimecardView employeeId={selectedEmployeeId} />
             </div>
             <div style={{ display: activeTab === 'my_analytics' ? 'block' : 'none', height: '100%' }}>
-              <MyAnalytics />
+              <MyAnalytics employeeId={selectedEmployeeId} />
             </div>
           </>
         )}
