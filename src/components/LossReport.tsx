@@ -24,7 +24,13 @@ type LossData = {
   }
 }
 
-export default function LossReport({ employeeId }: { employeeId: string }) {
+export default function LossReport({
+  employeeId,
+  onResetEmployee,
+}: {
+  employeeId: string
+  onResetEmployee?: () => void
+}) {
   const { employees } = useEmployees()
   const { data: varieties } = useVarietyMaster()
   const { data: discardReasons } = useLossReasonMaster('discard')
@@ -352,6 +358,7 @@ export default function LossReport({ employeeId }: { employeeId: string }) {
           onDone={() => {
             setShowSuccess(false)
             reset()
+            onResetEmployee?.()
           }}
         />
       )}

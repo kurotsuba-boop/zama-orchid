@@ -19,7 +19,13 @@ function getToday() {
 
 type SuccessMode = null | 'create' | 'update'
 
-export default function WorkReport({ employeeId }: { employeeId: string }) {
+export default function WorkReport({
+  employeeId,
+  onResetEmployee,
+}: {
+  employeeId: string
+  onResetEmployee?: () => void
+}) {
   const { employees } = useEmployees()
   const { data: workTypes } = useWorkMaster()
   const { data: locations } = useLocationMaster()
@@ -529,10 +535,11 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
       {successMode === 'create' && (
         <SuccessOverlay
           emoji="🌸"
-          message="登録しました！次の作業をどうぞ"
+          message="登録しました！お疲れ様でした"
           onDone={() => {
             setSuccessMode(null)
             resetWork()
+            onResetEmployee?.()
           }}
         />
       )}
@@ -543,6 +550,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
           onDone={() => {
             setSuccessMode(null)
             resetWork()
+            onResetEmployee?.()
           }}
         />
       )}

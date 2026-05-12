@@ -132,10 +132,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <div className="flex-1 px-6 py-4 overflow-hidden">
         {/* 入力系タブ: admin/user共通 */}
         <div style={{ display: activeTab === 'work' ? 'block' : 'none', height: '100%' }}>
-          <WorkReport employeeId={selectedEmployeeId} />
+          <WorkReport
+            employeeId={selectedEmployeeId}
+            onResetEmployee={() => setSelectedEmployeeId('')}
+          />
         </div>
         <div style={{ display: activeTab === 'loss' ? 'block' : 'none', height: '100%' }}>
-          <LossReport employeeId={selectedEmployeeId} />
+          <LossReport
+            employeeId={selectedEmployeeId}
+            onResetEmployee={() => setSelectedEmployeeId('')}
+          />
         </div>
         <div style={{ display: activeTab === 'timecard' ? 'block' : 'none', height: '100%' }}>
           <TimecardView employeeId={selectedEmployeeId} />
