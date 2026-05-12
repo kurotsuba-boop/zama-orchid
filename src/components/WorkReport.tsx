@@ -6,7 +6,7 @@ import { useEmployees } from '@/hooks/useEmployees'
 import { useWorkMaster, useLocationMaster } from '@/hooks/useMaster'
 import Chip from '@/components/Chip'
 import SliderInput from '@/components/SliderInput'
-import SelectField from '@/components/SelectField'
+import EmployeeSelectModal from '@/components/EmployeeSelectModal'
 import Label from '@/components/Label'
 import DatePicker from '@/components/DatePicker'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -185,7 +185,7 @@ export default function WorkReport() {
         <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3">
           <div>
             <Label>担当氏名</Label>
-            <SelectField
+            <EmployeeSelectModal
               value={empId}
               onChange={setEmpId}
               options={employees.map((e) => ({ id: e.id, name: e.name }))}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
-import SelectField from '@/components/SelectField'
+import EmployeeSelectModal from '@/components/EmployeeSelectModal'
 import Label from '@/components/Label'
 import ConfirmModal from '@/components/ConfirmModal'
 import SuccessOverlay from '@/components/SuccessOverlay'
@@ -106,7 +106,7 @@ export default function TimecardView() {
       <div className="w-full max-w-3xl">
         <div className="mb-10 max-w-sm mx-auto">
           <Label>担当氏名</Label>
-          <SelectField
+          <EmployeeSelectModal
             value={empId}
             onChange={(v) => {
               setEmpId(v)

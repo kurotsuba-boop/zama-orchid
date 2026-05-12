@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
-import SelectField from '@/components/SelectField'
+import EmployeeSelectModal from '@/components/EmployeeSelectModal'
 import Label from '@/components/Label'
 
 function pad(n: number) {
@@ -105,7 +105,7 @@ export default function MyAnalytics() {
       <div className="max-w-3xl mx-auto flex flex-col gap-4">
         <div className="max-w-sm">
           <Label>担当氏名</Label>
-          <SelectField
+          <EmployeeSelectModal
             value={empId}
             onChange={setEmpId}
             options={employees.map((e) => ({ id: e.id, name: e.name }))}

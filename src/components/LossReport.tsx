@@ -7,7 +7,7 @@ import { GREENHOUSES, POSITIONS } from '@/lib/constants'
 import { useVarietyMaster, useLossReasonMaster } from '@/hooks/useMaster'
 import Chip from '@/components/Chip'
 import Stepper from '@/components/Stepper'
-import SelectField from '@/components/SelectField'
+import EmployeeSelectModal from '@/components/EmployeeSelectModal'
 import Label from '@/components/Label'
 import DatePicker from '@/components/DatePicker'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -176,7 +176,7 @@ export default function LossReport() {
       >
         <div>
           <Label>担当氏名</Label>
-          <SelectField
+          <EmployeeSelectModal
             value={empId}
             onChange={setEmpId}
             options={employees.map((e) => ({ id: e.id, name: e.name }))}
