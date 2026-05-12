@@ -184,11 +184,9 @@ export default function LossReport({ employeeId }: { employeeId: string }) {
   return (
     <div className="flex gap-4 h-full" style={{ animation: 'fadeIn 0.3s' }}>
       {/* 左カラム: 基本情報 */}
-      <div
-        className="w-64 flex flex-col gap-3 flex-shrink-0 overflow-y-auto pr-2"
-        style={{ maxHeight: 'calc(100vh - 92px)' }}
-      >
-        <div className="flex flex-col gap-3">
+      <div className="w-64 flex flex-col gap-3 flex-shrink-0 h-full min-h-0">
+        {/* スクロール可能なフォーム領域 */}
+        <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3 min-h-0">
           <div>
             <Label>作業日</Label>
             <DatePicker value={workDate} onChange={setWorkDate} />
@@ -197,52 +195,53 @@ export default function LossReport({ employeeId }: { employeeId: string }) {
             <Label>苗入荷日</Label>
             <DatePicker value={arrivalDate} onChange={setArrivalDate} placeholder="苗入荷日を選択" />
           </div>
-        </div>
 
-        <div>
-          <Label>作業温室</Label>
-          <div className="flex flex-wrap gap-2">
-            {GREENHOUSES.map((g) => (
-              <Chip
-                key={g}
-                label={g}
-                active={greenhouses.includes(g)}
-                onClick={() => toggleArray(greenhouses, setGreenhouses, g)}
-              />
-            ))}
+          <div>
+            <Label>作業温室</Label>
+            <div className="flex flex-wrap gap-2">
+              {GREENHOUSES.map((g) => (
+                <Chip
+                  key={g}
+                  label={g}
+                  active={greenhouses.includes(g)}
+                  onClick={() => toggleArray(greenhouses, setGreenhouses, g)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label>作業区域</Label>
+            <div className="flex flex-wrap gap-2">
+              {POSITIONS.map((p) => (
+                <Chip
+                  key={p}
+                  label={p}
+                  active={positions.includes(p)}
+                  onClick={() => toggleArray(positions, setPositions, p)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label>メモ</Label>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              rows={2}
+              placeholder="自由記入…"
+              className="w-full px-4 py-2.5 text-base rounded-xl resize-none focus:outline-none"
+              style={{ background: '#ffffff', color: '#1f2937', border: '1.5px solid #e5e7eb' }}
+            />
           </div>
         </div>
 
-        <div>
-          <Label>作業区域</Label>
-          <div className="flex flex-wrap gap-2">
-            {POSITIONS.map((p) => (
-              <Chip
-                key={p}
-                label={p}
-                active={positions.includes(p)}
-                onClick={() => toggleArray(positions, setPositions, p)}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label>メモ</Label>
-          <textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            rows={3}
-            placeholder="自由記入…"
-            className="w-full px-4 py-3 text-base rounded-xl resize-none focus:outline-none"
-            style={{ background: '#ffffff', color: '#1f2937', border: '1.5px solid #e5e7eb' }}
-          />
-        </div>
-
+        {/* 常に画面内に固定される登録ボタン */}
         <button
           disabled={!canSubmit}
           onClick={() => setShowConfirm(true)}
-          className="w-full py-4 rounded-xl text-base font-bold text-white active:scale-[0.97] disabled:opacity-25"
+          className="w-full py-4 rounded-xl text-base font-bold text-white active:scale-[0.97] disabled:opacity-25 flex-shrink-0"
           style={{
             background: canSubmit ? '#b8963e' : '#e5e7eb',
             boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
