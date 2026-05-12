@@ -43,23 +43,25 @@ function getLastMonthRange(): [string, string] {
   return [fmt(first), fmt(last)]
 }
 
-type Period = 'week' | 'month' | 'last_month' | 'custom'
+type Period = 'day' | 'week' | 'month' | 'last_month' | 'custom'
 
 function usePeriod(initial: Period = 'month') {
   const [period, setPeriod] = useState<Period>(initial)
+  const [dayDate, setDayDate] = useState(getToday())
   const [customFrom, setCustomFrom] = useState(getMonthStart())
   const [customTo, setCustomTo] = useState(getToday())
 
   const range = useCallback((): [string, string] => {
     switch (period) {
+      case 'day': return [dayDate, dayDate]
       case 'week': return [getMonday(), getToday()]
       case 'month': return [getMonthStart(), getToday()]
       case 'last_month': return getLastMonthRange()
       case 'custom': return [customFrom, customTo]
     }
-  }, [period, customFrom, customTo])
+  }, [period, dayDate, customFrom, customTo])
 
-  return { period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo, range }
+  return { period, setPeriod, dayDate, setDayDate, customFrom, setCustomFrom, customTo, setCustomTo, range }
 }
 
 // ── 共通UI ──
@@ -76,16 +78,17 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 function PeriodSelector({
-  period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo,
+  period, setPeriod, dayDate, setDayDate, customFrom, setCustomFrom, customTo, setCustomTo,
 }: ReturnType<typeof usePeriod>) {
   const chips: { key: Period; label: string }[] = [
+    { key: 'day', label: '日別' },
     { key: 'week', label: '今週' },
     { key: 'month', label: '今月' },
     { key: 'last_month', label: '先月' },
     { key: 'custom', label: 'カスタム' },
   ]
   return (
-    <div className="flex items-center gap-3 mb-6">
+    <div className="flex items-center gap-3 mb-6 flex-wrap">
       {chips.map((c) => (
         <button
           key={c.key}
@@ -100,6 +103,15 @@ function PeriodSelector({
           {c.label}
         </button>
       ))}
+      {period === 'day' && (
+        <input
+          type="date"
+          value={dayDate}
+          onChange={(e) => setDayDate(e.target.value)}
+          className="px-3 py-2 rounded-lg text-sm focus:outline-none ml-2"
+          style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }}
+        />
+      )}
       {period === 'custom' && (
         <div className="flex items-center gap-2 ml-2">
           <input

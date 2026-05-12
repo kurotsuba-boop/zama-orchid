@@ -462,6 +462,102 @@ function PersonalContent({
           )}
         </>
       )}
+
+      {/* 作業履歴 (期間内すべて、日付グループ化) */}
+      <Card title="作業履歴">
+        <WorkHistory reports={reports} />
+      </Card>
+    </div>
+  )
+}
+
+// ── 株数等のサマリ ──
+function summarizeExtras(r: any): string {
+  const parts: string[] = []
+  const floors = [
+    ['1F', r.plant_count_1f],
+    ['2F', r.plant_count_2f],
+    ['3F', r.plant_count_3f],
+    ['4F', r.plant_count_4f],
+    ['5F', r.plant_count_5f],
+    ['5F+', r.plant_count_5f_over],
+  ].filter(([, v]) => v && Number(v) > 0)
+  if (floors.length > 0) {
+    parts.push('株:' + floors.map(([k, v]) => `${k}${v}`).join('/'))
+  }
+  if (r.bend_count && Number(r.bend_count) > 0) parts.push(`曲げ${r.bend_count}本`)
+  if (r.pole_count && Number(r.pole_count) > 0) parts.push(`立て${r.pole_count}本`)
+  return parts.join(' · ')
+}
+
+// ── 作業履歴 (日付グループ化、新しい順) ──
+function WorkHistory({ reports }: { reports: any[] }) {
+  const groups = useMemo(() => {
+    const map: Record<string, any[]> = {}
+    reports.forEach((r) => {
+      const d = String(r.reported_at).slice(0, 10)
+      if (!map[d]) map[d] = []
+      map[d].push(r)
+    })
+    // 各日内は登録順 (created_at)
+    Object.values(map).forEach((arr) =>
+      arr.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+    )
+    return map
+  }, [reports])
+
+  const dates = useMemo(
+    () => Object.keys(groups).sort((a, b) => b.localeCompare(a)),
+    [groups]
+  )
+
+  if (dates.length === 0) return <NoData />
+
+  const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
+
+  return (
+    <div className="flex flex-col gap-4">
+      {dates.map((d) => {
+        const date = new Date(d)
+        const sum = groups[d].reduce((s, r) => s + Number(r.hours || 0), 0)
+        return (
+          <div key={d}>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-sm font-bold" style={{ color: GOLD }}>
+                {date.getMonth() + 1}/{date.getDate()}（{WEEKDAYS[date.getDay()]}）
+              </p>
+              <p className="text-xs font-bold" style={{ color: GOLD, fontFamily: "'DM Mono', monospace" }}>
+                計 {round1(sum).toFixed(1)}h
+              </p>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <th className="text-left py-1.5 px-3 font-semibold text-xs" style={{ color: '#9ca3af' }}>作業内容</th>
+                  <th className="text-center py-1.5 px-3 font-semibold text-xs w-20" style={{ color: '#9ca3af' }}>時間</th>
+                  <th className="text-left py-1.5 px-3 font-semibold text-xs w-28" style={{ color: '#9ca3af' }}>場所</th>
+                  <th className="text-left py-1.5 px-3 font-semibold text-xs" style={{ color: '#9ca3af' }}>詳細</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groups[d].map((r, i) => {
+                  const extras = summarizeExtras(r)
+                  return (
+                    <tr key={r.id || i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td className="py-2 px-3 font-medium" style={{ color: '#1f2937' }}>{r.work_type}</td>
+                      <td className="text-center py-2 px-3" style={{ color: GOLD, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                        {Number(r.hours).toFixed(1)}h
+                      </td>
+                      <td className="py-2 px-3 text-xs" style={{ color: '#6b7280' }}>{r.location || '—'}</td>
+                      <td className="py-2 px-3 text-xs" style={{ color: '#9ca3af' }}>{extras || '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -502,7 +598,7 @@ function WorkTable({ rows }: { rows: { name: string; hours: number; location: st
 }
 
 // ════════════════════════════════════════════
-// 全体進捗
+// 全体進捗（従業員別情報を含まないシンプル集計）
 // ════════════════════════════════════════════
 function OverallContent({
   period, dayDate, from, to, reports, timecards,
@@ -516,159 +612,53 @@ function OverallContent({
 }) {
   const totalHours = useMemo(() => round1(reports.reduce((s, r) => s + Number(r.hours || 0), 0)), [reports])
   const byType = useMemo(() => aggregateByType(reports), [reports])
-  const byDay = useMemo(() => aggregateByDay(reports), [reports])
-  const byEmp = useMemo(() => aggregateByEmployee(reports), [reports])
-  const attendance = useMemo(() => aggregateAttendance(timecards), [timecards])
-
-  // 日別: 出勤者
-  const attendees = useMemo(() => {
-    if (period !== 'day') return []
-    return timecards
-      .filter((t) => t.clock_in)
-      .map((t) => ({
-        name: t.employees?.name || '不明',
-        clockIn: t.clock_in,
-        clockOut: t.clock_out,
-      }))
-      .sort((a, b) => (a.clockIn || '').localeCompare(b.clockIn || ''))
-  }, [period, timecards])
 
   return (
     <div className="flex flex-col gap-3">
       {/* 集計サマリ */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <StatCard label="全体作業時間" value={totalHours.toFixed(1)} unit="h" />
         <StatCard label="登録件数" value={reports.length} unit="件" />
-        <StatCard label="従業員数" value={byEmp.length} unit="名" />
       </div>
 
-      {period === 'day' ? (
-        <>
-          <Card title="作業内容別 合計時間">
-            {byType.length === 0 ? <NoData /> : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>作業内容</th>
-                    <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>時間</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byType.map((r, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td className="py-2 px-3" style={{ color: '#1f2937' }}>{r.name}</td>
-                      <td className="text-center py-2 px-3" style={{ color: GOLD, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
-                        {r.hours.toFixed(1)}h
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
+      {/* 作業内容別: グラフ + テーブル */}
+      <Card title="作業内容別 合計時間">
+        {byType.length === 0 ? <NoData /> : (
+          <>
+            <ResponsiveContainer width="100%" height={Math.max(180, byType.length * 32)}>
+              <BarChart data={byType} layout="vertical" margin={{ left: 110, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 11 }} unit="h" />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#1f2937', fontSize: 11 }} width={105} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb' }}
+                  formatter={(v: any) => [`${v}h`, '時間']}
+                />
+                <Bar dataKey="hours" fill={GOLD} radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
 
-          <Card title={`出勤者 (${attendees.length}名)`}>
-            {attendees.length === 0 ? <NoData /> : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>氏名</th>
-                    <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>出勤</th>
-                    <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>退勤</th>
+            <table className="w-full text-sm mt-4">
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                  <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>作業内容</th>
+                  <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>時間</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byType.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td className="py-2 px-3" style={{ color: '#1f2937' }}>{r.name}</td>
+                    <td className="text-center py-2 px-3" style={{ color: GOLD, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
+                      {r.hours.toFixed(1)}h
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {attendees.map((a, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td className="py-2 px-3 font-semibold" style={{ color: '#1f2937' }}>{a.name}</td>
-                      <td className="text-center py-2 px-3" style={{ fontFamily: "'DM Mono', monospace", color: '#1f2937' }}>
-                        {fmtTimeOnly(a.clockIn)}
-                      </td>
-                      <td className="text-center py-2 px-3" style={{ fontFamily: "'DM Mono', monospace", color: '#1f2937' }}>
-                        {fmtTimeOnly(a.clockOut)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
-        </>
-      ) : (
-        <>
-          <Card title="日別 全体作業時間 推移">
-            {byDay.length === 0 ? <NoData /> : (
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={byDay} margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: '#6b7280', fontSize: 10 }}
-                    tickFormatter={(v: string) => v.slice(5)}
-                  />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} unit="h" />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb' }}
-                    formatter={(v: any) => [`${v}h`, '時間']}
-                  />
-                  <Line type="monotone" dataKey="hours" stroke={GOLD} strokeWidth={2.5} dot={{ fill: GOLD, r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
-
-          <Card title="作業内容別 合計時間">
-            {byType.length === 0 ? <NoData /> : (
-              <ResponsiveContainer width="100%" height={Math.max(180, byType.length * 32)}>
-                <BarChart data={byType} layout="vertical" margin={{ left: 110, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 11 }} unit="h" />
-                  <YAxis type="category" dataKey="name" tick={{ fill: '#1f2937', fontSize: 11 }} width={105} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb' }}
-                    formatter={(v: any) => [`${v}h`, '時間']}
-                  />
-                  <Bar dataKey="hours" fill={GOLD} radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
-
-          <Card title="従業員別 集計">
-            {byEmp.length === 0 ? <NoData /> : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>氏名</th>
-                    <th className="text-center py-2 px-3 font-bold w-28" style={{ color: '#6b7280' }}>作業時間</th>
-                    {period === 'month' && (
-                      <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>出勤日数</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {byEmp.map((e, i) => {
-                    const att = attendance.find((a) => a.name === e.name)
-                    return (
-                      <tr key={i} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                        <td className="py-2 px-3 font-semibold" style={{ color: '#1f2937' }}>{e.name}</td>
-                        <td className="text-center py-2 px-3" style={{ color: GOLD, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
-                          {e.hours.toFixed(1)}h
-                        </td>
-                        {period === 'month' && (
-                          <td className="text-center py-2 px-3" style={{ fontFamily: "'DM Mono', monospace", color: '#1f2937' }}>
-                            {att ? `${att.days}日` : '—'}
-                          </td>
-                        )}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </Card>
-        </>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </Card>
     </div>
   )
 }
