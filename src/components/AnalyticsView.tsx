@@ -509,11 +509,36 @@ const SECTIONS = [
   { id: 'attendance', label: '出勤', icon: '⏰' },
 ]
 
+function LiveClock() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const p = (n: number) => String(n).padStart(2, '0')
+  const fmt = `${now.getFullYear()}/${p(now.getMonth() + 1)}/${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`
+  return (
+    <div
+      className="inline-block px-4 py-2 rounded-lg text-base font-bold mb-4"
+      style={{
+        background: '#faf6ed',
+        color: '#b8963e',
+        border: '1.5px solid #e8dcc3',
+        fontFamily: "'DM Mono', monospace",
+      }}
+    >
+      🕐 {fmt}
+    </div>
+  )
+}
+
 export default function AnalyticsView() {
   const [section, setSection] = useState('work')
 
   return (
     <div className="h-full overflow-y-auto" style={{ animation: 'fadeIn 0.3s' }}>
+      <LiveClock />
+
       {/* サブタブ */}
       <div className="flex items-center gap-2 mb-6">
         {SECTIONS.map((s) => (
