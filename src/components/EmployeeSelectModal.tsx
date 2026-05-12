@@ -80,7 +80,7 @@ export default function EmployeeSelectModal({ value, onChange, options, placehol
                   選択肢がありません
                 </p>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {options.map((o) => {
                     const isActive = o.id === value
                     return (
