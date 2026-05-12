@@ -23,7 +23,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     return (
       <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#fafaf8' }}>
         <Header activeTab="" onTabChange={setActiveTab} />
-        <div className="flex-1 px-8 py-5 overflow-hidden">{children}</div>
+        <div className="flex-1 px-6 py-4 overflow-hidden">{children}</div>
       </div>
     )
   }
@@ -32,7 +32,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#fafaf8' }}>
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="flex-1 px-8 py-5 overflow-hidden">
+      <div className="flex-1 px-6 py-4 overflow-hidden">
         <div style={{ display: activeTab === 'work' ? 'block' : 'none', height: '100%' }}>
           <WorkReport />
         </div>

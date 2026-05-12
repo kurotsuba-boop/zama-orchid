@@ -8,7 +8,7 @@ type ChipProps = {
 }
 
 export default function Chip({ label, active, onClick, size = 'md' }: ChipProps) {
-  const pad = size === 'lg' ? 'px-7 py-4 text-lg' : 'px-5 py-3 text-sm'
+  const pad = size === 'lg' ? 'px-5 py-3 text-base' : 'px-3 py-2 text-sm'
 
   return (
     <button

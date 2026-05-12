@@ -41,16 +41,16 @@ export default function Stepper({ value, onChange }: StepperProps) {
   const increment = () => onChange(value + 1)
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center justify-center gap-1 min-w-[112px]">
       <button
         onPointerDown={() => handlePointerDown(-1)}
         onPointerUp={stopRepeat}
         onPointerLeave={stopRepeat}
         onClick={decrement}
-        className="flex items-center justify-center rounded-xl font-bold text-2xl select-none active:scale-90 transition-transform"
+        className="flex items-center justify-center rounded-lg font-bold text-xl select-none active:scale-90 transition-transform flex-shrink-0"
         style={{
-          width: '44px',
-          height: '44px',
+          width: '40px',
+          height: '40px',
           background: '#f3f4f6',
           color: value > 0 ? '#6b7280' : '#d1d5db',
           border: '1.5px solid #e5e7eb',
@@ -59,7 +59,7 @@ export default function Stepper({ value, onChange }: StepperProps) {
         −
       </button>
       <span
-        className="w-10 text-center text-xl font-bold select-none"
+        className="w-8 text-center text-lg font-bold select-none flex-shrink-0"
         style={{ color: value > 0 ? '#1f2937' : '#d1d5db', fontFamily: "'DM Mono', monospace" }}
       >
         {value}
@@ -69,10 +69,10 @@ export default function Stepper({ value, onChange }: StepperProps) {
         onPointerUp={stopRepeat}
         onPointerLeave={stopRepeat}
         onClick={increment}
-        className="flex items-center justify-center rounded-xl font-bold text-2xl select-none active:scale-90 transition-transform"
+        className="flex items-center justify-center rounded-lg font-bold text-xl select-none active:scale-90 transition-transform flex-shrink-0"
         style={{
-          width: '44px',
-          height: '44px',
+          width: '40px',
+          height: '40px',
           background: '#faf6ed',
           color: '#b8963e',
           border: '1.5px solid #e8dcc3',

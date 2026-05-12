@@ -168,11 +168,11 @@ export default function LossReport() {
   ]
 
   return (
-    <div className="flex gap-6 h-full" style={{ animation: 'fadeIn 0.3s' }}>
+    <div className="flex gap-4 h-full" style={{ animation: 'fadeIn 0.3s' }}>
       {/* 左カラム: 基本情報 */}
       <div
-        className="w-80 flex flex-col gap-4 flex-shrink-0 overflow-y-auto pr-2"
-        style={{ maxHeight: 'calc(100vh - 100px)' }}
+        className="w-64 flex flex-col gap-3 flex-shrink-0 overflow-y-auto pr-2"
+        style={{ maxHeight: 'calc(100vh - 92px)' }}
       >
         <div>
           <Label>担当氏名</Label>
@@ -184,12 +184,12 @@ export default function LossReport() {
           />
         </div>
 
-        <div className="flex gap-3">
-          <div className="flex-1">
+        <div className="flex flex-col gap-3">
+          <div>
             <Label>作業日</Label>
             <DatePicker value={workDate} onChange={setWorkDate} />
           </div>
-          <div className="flex-1">
+          <div>
             <Label>苗入荷日</Label>
             <DatePicker value={arrivalDate} onChange={setArrivalDate} placeholder="苗入荷日を選択" />
           </div>
@@ -238,7 +238,7 @@ export default function LossReport() {
         <button
           disabled={!canSubmit}
           onClick={() => setShowConfirm(true)}
-          className="w-full py-5 rounded-xl text-lg font-bold text-white active:scale-[0.97] disabled:opacity-25"
+          className="w-full py-4 rounded-xl text-base font-bold text-white active:scale-[0.97] disabled:opacity-25"
           style={{
             background: canSubmit ? '#b8963e' : '#e5e7eb',
             boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
@@ -251,7 +251,7 @@ export default function LossReport() {
       {/* 右カラム: 品種別ロス入力 */}
       <div
         className="flex-1 overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 100px)' }}
+        style={{ maxHeight: 'calc(100vh - 92px)' }}
       >
         <Label>品種別ロス入力</Label>
         <div className="space-y-2">
@@ -266,7 +266,7 @@ export default function LossReport() {
             >
               <button
                 onClick={() => setExpandedIdx(expandedIdx === i ? -1 : i)}
-                className="w-full flex items-center justify-between px-6 py-4 text-left"
+                className="w-full flex items-center justify-between px-4 py-3 text-left"
               >
                 <span
                   className="text-base font-semibold"
@@ -281,21 +281,21 @@ export default function LossReport() {
 
               {expandedIdx === i && (
                 <div
-                  className="px-6 pb-6 grid grid-cols-2 gap-6"
+                  className="px-4 pb-4 grid grid-cols-2 gap-4"
                   style={{ animation: 'slideUp 0.15s' }}
                 >
                   {/* 破棄 */}
                   <div>
-                    <div className="flex items-center gap-2 mb-4 pb-2" style={{ borderBottom: '2px solid #fecaca' }}>
-                      <span className="inline-block w-3 h-3 rounded-full" style={{ background: '#dc2626' }} />
-                      <p className="text-lg font-bold" style={{ color: '#dc2626' }}>破棄</p>
+                    <div className="flex items-center gap-2 mb-3 pb-1.5" style={{ borderBottom: '2px solid #fecaca' }}>
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: '#dc2626' }} />
+                      <p className="text-base font-bold" style={{ color: '#dc2626' }}>破棄</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-2">
                       {discardReasons.map((r) => (
-                        <div key={r.id} className="flex flex-col items-center gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#dc2626' }} />
-                            <p className="text-base font-semibold" style={{ color: '#6b7280' }}>
+                        <div key={r.id} className="flex flex-col items-center gap-1.5">
+                          <div className="flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#dc2626' }} />
+                            <p className="text-xs font-semibold" style={{ color: '#6b7280' }}>
                               {r.label}
                             </p>
                           </div>
@@ -310,16 +310,16 @@ export default function LossReport() {
 
                   {/* B・C品 */}
                   <div>
-                    <div className="flex items-center gap-2 mb-4 pb-2" style={{ borderBottom: '2px solid #fde68a' }}>
-                      <span className="inline-block w-3 h-3 rounded-full" style={{ background: '#d97706' }} />
-                      <p className="text-lg font-bold" style={{ color: '#d97706' }}>B・C品</p>
+                    <div className="flex items-center gap-2 mb-3 pb-1.5" style={{ borderBottom: '2px solid #fde68a' }}>
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: '#d97706' }} />
+                      <p className="text-base font-bold" style={{ color: '#d97706' }}>B・C品</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-2">
                       {downgradeReasons.map((r) => (
-                        <div key={r.id} className="flex flex-col items-center gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#d97706' }} />
-                            <p className="text-base font-semibold" style={{ color: '#6b7280' }}>
+                        <div key={r.id} className="flex flex-col items-center gap-1.5">
+                          <div className="flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#d97706' }} />
+                            <p className="text-xs font-semibold" style={{ color: '#6b7280' }}>
                               {r.label}
                             </p>
                           </div>
