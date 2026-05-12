@@ -3,19 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const TABS = [
-  { id: 'work', label: '作業報告', icon: '📋' },
-  { id: 'loss', label: 'ロス報告', icon: '⚠️' },
-  { id: 'timecard', label: 'タイムカード', icon: '⏰' },
-  { id: 'analytics', label: '分析', icon: '📊' },
-]
+export type TabDef = { id: string; label: string; icon: string }
 
 type HeaderProps = {
+  tabs: TabDef[]
   activeTab: string
   onTabChange: (tab: string) => void
+  showSettings?: boolean
 }
 
-export default function Header({ activeTab, onTabChange }: HeaderProps) {
+export default function Header({ tabs, activeTab, onTabChange, showSettings = true }: HeaderProps) {
   const router = useRouter()
   const [clock, setClock] = useState('')
 
@@ -44,7 +41,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#f5f3ef' }}>
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => onTabChange(t.id)}
@@ -65,14 +62,16 @@ export default function Header({ activeTab, onTabChange }: HeaderProps) {
         <div className="text-xs whitespace-nowrap" style={{ color: '#9ca3af', fontFamily: "'DM Mono', monospace" }}>
           {clock}
         </div>
-        <button
-          onClick={() => router.push('/admin')}
-          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all active:scale-90"
-          style={{ background: 'transparent', border: '1px solid transparent' }}
-          title="設定"
-        >
-          <span className="text-base">⚙️</span>
-        </button>
+        {showSettings && (
+          <button
+            onClick={() => router.push('/admin')}
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-all active:scale-90"
+            style={{ background: 'transparent', border: '1px solid transparent' }}
+            title="設定"
+          >
+            <span className="text-base">⚙️</span>
+          </button>
+        )}
       </div>
     </div>
   )
