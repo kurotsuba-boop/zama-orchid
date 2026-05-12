@@ -252,10 +252,7 @@ export default function LossReport({ employeeId }: { employeeId: string }) {
       </div>
 
       {/* 右カラム: 品種別ロス入力 */}
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 92px)' }}
-      >
+      <div className="flex-1 overflow-y-auto h-full min-h-0">
         <Label>品種別ロス入力</Label>
         <div className="space-y-2">
           {varieties.map((v, i) => (

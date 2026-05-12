@@ -53,7 +53,13 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   if (loading || !role) {
     return (
-      <div className="h-screen flex items-center justify-center" style={{ background: '#fafaf8' }}>
+      <div
+        className="flex items-center justify-center"
+        style={{
+          background: '#fafaf8',
+          height: 'calc(100dvh - env(safe-area-inset-bottom))',
+        }}
+      >
         <p className="text-sm" style={{ color: '#9ca3af' }}>読み込み中...</p>
       </div>
     )
@@ -88,7 +94,13 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   if (isAdmin) {
     if (role !== 'admin') return null
     return (
-      <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#fafaf8' }}>
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{
+          background: '#fafaf8',
+          height: 'calc(100dvh - env(safe-area-inset-bottom))',
+        }}
+      >
         <Header
           tabs={tabs}
           activeTab={headerActiveTab}
@@ -101,7 +113,13 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#fafaf8' }}>
+    <div
+      className="flex flex-col overflow-hidden"
+      style={{
+        background: '#fafaf8',
+        height: 'calc(100dvh - env(safe-area-inset-bottom))',
+      }}
+    >
       <Header
         tabs={tabs}
         activeTab={headerActiveTab}
