@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
 
 export type TabDef = { id: string; label: string; icon: string }
 
@@ -27,6 +28,13 @@ export default function Header({ tabs, activeTab, onTabChange, showSettings = tr
     const id = setInterval(tick, 30000)
     return () => clearInterval(id)
   }, [])
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.replace('/login')
+    router.refresh()
+  }
 
   return (
     <div
@@ -72,6 +80,14 @@ export default function Header({ tabs, activeTab, onTabChange, showSettings = tr
             <span className="text-base">⚙️</span>
           </button>
         )}
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap"
+          style={{ background: 'transparent', color: '#9ca3af', border: '1px solid #e5e7eb' }}
+          title="ログアウト"
+        >
+          ログアウト
+        </button>
       </div>
     </div>
   )
