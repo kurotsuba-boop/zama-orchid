@@ -93,6 +93,36 @@ function StatCard({ label, value, unit }: { label: string; value: string | numbe
   )
 }
 
+// 前期間比較カード
+function CompareCard({ label, current, previous, unit }: { label: string; current: number; previous: number; unit: string }) {
+  const diff = current - previous
+  const pct = previous > 0 ? round1((diff / previous) * 100) : null
+  const isUp = diff > 0
+  const isDown = diff < 0
+  const color = isUp ? '#16a34a' : isDown ? '#dc2626' : '#9ca3af'
+  const arrow = isUp ? '▲' : isDown ? '▼' : '—'
+  return (
+    <div className="rounded-2xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+      <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#9ca3af' }}>
+        {label}
+      </p>
+      <div className="flex items-baseline gap-2">
+        <p className="text-2xl font-bold" style={{ color: GOLD, fontFamily: "'DM Mono', monospace" }}>
+          {round1(current).toFixed(1)}
+          <span className="text-sm ml-1" style={{ color: '#9ca3af' }}>{unit}</span>
+        </p>
+        <p className="text-xs font-bold" style={{ color, fontFamily: "'DM Mono', monospace" }}>
+          {arrow} {Math.abs(round1(diff)).toFixed(1)}{unit}
+          {pct !== null && ` (${pct > 0 ? '+' : ''}${pct}%)`}
+        </p>
+      </div>
+      <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+        前期間: {round1(previous).toFixed(1)}{unit}
+      </p>
+    </div>
+  )
+}
+
 function NoData() {
   return (
     <div className="text-center py-8 text-sm" style={{ color: '#9ca3af' }}>
@@ -187,9 +217,33 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
     return [fmtDate(first), fmtDate(last), `${base.getFullYear()}年${base.getMonth() + 1}月`]
   }, [period, dayDate, weekSide, monthSide])
 
+  // 前期間（比較用）
+  const [prevFrom, prevTo] = useMemo<[string, string]>(() => {
+    if (period === 'day') {
+      const d = new Date(dayDate)
+      d.setDate(d.getDate() - 1)
+      return [fmtDate(d), fmtDate(d)]
+    }
+    if (period === 'week') {
+      const fromD = new Date(from)
+      const toD = new Date(to)
+      fromD.setDate(fromD.getDate() - 7)
+      toD.setDate(toD.getDate() - 7)
+      return [fmtDate(fromD), fmtDate(toD)]
+    }
+    // month
+    const fromD = new Date(from)
+    fromD.setDate(1)
+    fromD.setMonth(fromD.getMonth() - 1)
+    const first = new Date(fromD.getFullYear(), fromD.getMonth(), 1)
+    const last = new Date(fromD.getFullYear(), fromD.getMonth() + 1, 0)
+    return [fmtDate(first), fmtDate(last)]
+  }, [period, dayDate, from])
+
   // データ取得
   const [reports, setReports] = useState<any[]>([])
   const [timecards, setTimecards] = useState<any[]>([])
+  const [prevReports, setPrevReports] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -197,6 +251,7 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
     if (view === 'personal' && !employeeId) {
       setReports([])
       setTimecards([])
+      setPrevReports([])
       return
     }
     const load = async () => {
@@ -212,17 +267,24 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
         .select('*, employees(name)')
         .gte('work_date', from)
         .lte('work_date', to)
+      let pq = supabase
+        .from('work_reports')
+        .select('hours')
+        .gte('reported_at', `${prevFrom}T00:00:00+09:00`)
+        .lte('reported_at', `${prevTo}T23:59:59+09:00`)
       if (view === 'personal' && employeeId) {
         rq = rq.eq('employee_id', employeeId)
         tq = tq.eq('employee_id', employeeId)
+        pq = pq.eq('employee_id', employeeId)
       }
-      const [r, t] = await Promise.all([rq, tq])
+      const [r, t, p] = await Promise.all([rq, tq, pq])
       setReports(r.data || [])
       setTimecards(t.data || [])
+      setPrevReports(p.data || [])
       setLoading(false)
     }
     load()
-  }, [view, period, from, to, employeeId])
+  }, [view, period, from, to, prevFrom, prevTo, employeeId])
 
   const empName = employees.find((e) => e.id === employeeId)?.name || ''
 
@@ -300,6 +362,7 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
           to={to}
           reports={reports}
           timecards={timecards}
+          prevReports={prevReports}
         />
       ) : (
         <OverallContent
@@ -309,6 +372,7 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
           to={to}
           reports={reports}
           timecards={timecards}
+          prevReports={prevReports}
         />
       )}
     </div>
@@ -344,7 +408,7 @@ function ViewTabs({ view, setView }: { view: ViewTab; setView: (v: ViewTab) => v
 // 個人実績
 // ════════════════════════════════════════════
 function PersonalContent({
-  period, empName, dayDate, from, to, reports, timecards,
+  period, empName, dayDate, from, to, reports, timecards, prevReports,
 }: {
   period: Period
   empName: string
@@ -353,11 +417,13 @@ function PersonalContent({
   to: string
   reports: any[]
   timecards: any[]
+  prevReports: any[]
 }) {
   // 集計
   const byType = useMemo(() => aggregateByType(reports), [reports])
   const byDay = useMemo(() => aggregateByDay(reports), [reports])
   const totalHours = useMemo(() => round1(reports.reduce((s, r) => s + Number(r.hours || 0), 0)), [reports])
+  const prevTotalHours = useMemo(() => round1(prevReports.reduce((s, r) => s + Number(r.hours || 0), 0)), [prevReports])
 
   // 勤怠サマリ
   const attendanceSummary = useMemo(() => {
@@ -386,6 +452,9 @@ function PersonalContent({
       <p className="text-sm font-semibold" style={{ color: '#1f2937' }}>
         {empName} さんの実績
       </p>
+
+      {/* 前期間比較 */}
+      <CompareCard label="作業時間（前期間比）" current={totalHours} previous={prevTotalHours} unit="h" />
 
       {/* 勤怠サマリ */}
       <div className="grid grid-cols-3 gap-3">
@@ -483,8 +552,9 @@ function summarizeExtras(r: any): string {
     ['5F+', r.plant_count_5f_over],
   ].filter(([, v]) => v && Number(v) > 0)
   if (floors.length > 0) {
-    parts.push('株:' + floors.map(([k, v]) => `${k}${v}`).join('/'))
+    parts.push('個数:' + floors.map(([k, v]) => `${k}${v}`).join('/'))
   }
+  if (r.unit_count && Number(r.unit_count) > 0) parts.push(`個数${r.unit_count}`)
   if (r.bend_count && Number(r.bend_count) > 0) parts.push(`曲げ${r.bend_count}本`)
   if (r.pole_count && Number(r.pole_count) > 0) parts.push(`立て${r.pole_count}本`)
   return parts.join(' · ')
@@ -601,7 +671,7 @@ function WorkTable({ rows }: { rows: { name: string; hours: number; location: st
 // 全体進捗（従業員別情報を含まないシンプル集計）
 // ════════════════════════════════════════════
 function OverallContent({
-  period, dayDate, from, to, reports, timecards,
+  period, dayDate, from, to, reports, timecards, prevReports,
 }: {
   period: Period
   dayDate: string
@@ -609,8 +679,10 @@ function OverallContent({
   to: string
   reports: any[]
   timecards: any[]
+  prevReports: any[]
 }) {
   const totalHours = useMemo(() => round1(reports.reduce((s, r) => s + Number(r.hours || 0), 0)), [reports])
+  const prevTotalHours = useMemo(() => round1(prevReports.reduce((s, r) => s + Number(r.hours || 0), 0)), [prevReports])
   const byType = useMemo(() => aggregateByType(reports), [reports])
 
   return (
@@ -620,6 +692,9 @@ function OverallContent({
         <StatCard label="全体作業時間" value={totalHours.toFixed(1)} unit="h" />
         <StatCard label="登録件数" value={reports.length} unit="件" />
       </div>
+
+      {/* 前期間比較 */}
+      <CompareCard label="全体作業時間（前期間比）" current={totalHours} previous={prevTotalHours} unit="h" />
 
       {/* 作業内容別: グラフ + テーブル */}
       <Card title="作業内容別 合計時間">

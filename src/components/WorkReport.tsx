@@ -41,6 +41,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
   const [count5fOver, setCount5fOver] = useState(0)
   const [bendCount, setBendCount] = useState(0)
   const [poleCount, setPoleCount] = useState(0)
+  const [unitCount, setUnitCount] = useState(0)
   const [showConfirm, setShowConfirm] = useState(false)
   const [successMode, setSuccessMode] = useState<SuccessMode>(null)
   const [todayReports, setTodayReports] = useState<any[]>([])
@@ -49,6 +50,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
 
   const currentWork = workTypes.find((w) => w.label === workType)
   const hasFloorCount = currentWork?.has_floor_count === true
+  const hasUnitCount = currentWork?.has_unit_count === true
   const hasBendCount = currentWork?.has_bend_count === true
   const hasPoleCount = currentWork?.has_pole_count === true
 
@@ -77,7 +79,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
 
   const resetSubCounts = () => {
     setCount1f(0); setCount2f(0); setCount3f(0); setCount4f(0); setCount5f(0); setCount5fOver(0)
-    setBendCount(0); setPoleCount(0)
+    setBendCount(0); setPoleCount(0); setUnitCount(0)
   }
 
   // 作業関連だけリセット（氏名・日付は残す）
@@ -112,6 +114,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
     setCount5fOver(r.plant_count_5f_over ?? 0)
     setBendCount(r.bend_count ?? 0)
     setPoleCount(r.pole_count ?? 0)
+    setUnitCount(r.unit_count ?? 0)
   }
 
   const cancelEdit = () => {
@@ -152,6 +155,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
       plant_count_5f_over: null,
       bend_count: null,
       pole_count: null,
+      unit_count: null,
     }
     if (hasFloorCount) {
       payload.plant_count_1f = count1f
@@ -160,6 +164,9 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
       payload.plant_count_4f = count4f
       payload.plant_count_5f = count5f
       payload.plant_count_5f_over = count5fOver
+    }
+    if (hasUnitCount) {
+      payload.unit_count = unitCount
     }
     if (hasBendCount) {
       payload.bend_count = bendCount
@@ -195,7 +202,8 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
     date,
     empName,
     `${workType}　${hours.toFixed(1)}h　${location}`,
-    ...(hasFloorCount ? [`1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver} 株`] : []),
+    ...(hasFloorCount ? [`個数 1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver}`] : []),
+    ...(hasUnitCount ? [`個数: ${unitCount}`] : []),
     ...(hasBendCount ? [`曲げ数: ${bendCount} 本`] : []),
     ...(hasPoleCount ? [`立て数: ${poleCount} 本`] : []),
   ]
@@ -217,8 +225,9 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
       ['5F+', r.plant_count_5f_over],
     ].filter(([, v]) => v && Number(v) > 0)
     if (floors.length > 0) {
-      parts.push('株: ' + floors.map(([k, v]) => `${k}${v}`).join('/'))
+      parts.push('個数: ' + floors.map(([k, v]) => `${k}${v}`).join('/'))
     }
+    if (r.unit_count && Number(r.unit_count) > 0) parts.push(`個数${r.unit_count}`)
     if (r.bend_count && Number(r.bend_count) > 0) parts.push(`曲げ${r.bend_count}本`)
     if (r.pole_count && Number(r.pole_count) > 0) parts.push(`立て${r.pole_count}本`)
     return parts.join(' · ')
@@ -400,7 +409,7 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
 
               {hasFloorCount && (
                 <div>
-                  <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>株数</p>
+                  <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>個数</p>
                   <div className="grid grid-cols-3 gap-x-1 gap-y-0">
                     {[
                       { label: '1F', value: count1f, set: setCount1f },
@@ -421,6 +430,24 @@ export default function WorkReport({ employeeId }: { employeeId: string }) {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {hasUnitCount && (
+                <div>
+                  <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>個数</p>
+                  <SliderInput
+                    value={unitCount}
+                    onChange={setUnitCount}
+                    min={0}
+                    max={300}
+                    step={1}
+                    unit="個"
+                    decimal={0}
+                    size="compact"
+                    showTicks={false}
+                    tight
+                  />
                 </div>
               )}
 

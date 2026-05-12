@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell,
@@ -10,6 +10,7 @@ import {
   fetchLossByVariety, fetchLossByReason, fetchLossMonthlyTrend,
   fetchAttendanceMonth,
 } from '@/lib/analytics'
+import { createClient } from '@/lib/supabase'
 
 // ── カラーパレット ──
 const COLORS = ['#b8963e', '#d4b96a', '#8b6f2f', '#c4a854', '#6b7280']
@@ -143,30 +144,163 @@ function NoData() {
   )
 }
 
+// ── 前期間レンジ計算 ──
+function getPrevRange(from: string, to: string, period: Period): [string, string] {
+  const fromD = new Date(from)
+  const toD = new Date(to)
+  if (period === 'day') {
+    fromD.setDate(fromD.getDate() - 1)
+    return [fmtDateSimple(fromD), fmtDateSimple(fromD)]
+  }
+  if (period === 'month' || period === 'last_month') {
+    const first = new Date(fromD.getFullYear(), fromD.getMonth() - 1, 1)
+    const last = new Date(fromD.getFullYear(), fromD.getMonth(), 0)
+    return [fmtDateSimple(first), fmtDateSimple(last)]
+  }
+  // week / custom: 同じ日数分前へ
+  const days = Math.round((toD.getTime() - fromD.getTime()) / 86400000) + 1
+  const prevFrom = new Date(fromD); prevFrom.setDate(prevFrom.getDate() - days)
+  const prevTo = new Date(fromD); prevTo.setDate(prevTo.getDate() - 1)
+  return [fmtDateSimple(prevFrom), fmtDateSimple(prevTo)]
+}
+
+function fmtDateSimple(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// ── 前期間比較カード ──
+function CompareCard({ label, current, previous, unit }: { label: string; current: number; previous: number; unit: string }) {
+  const diff = current - previous
+  const pct = previous > 0 ? Math.round((diff / previous) * 1000) / 10 : null
+  const isUp = diff > 0, isDown = diff < 0
+  const color = isUp ? '#16a34a' : isDown ? '#dc2626' : '#9ca3af'
+  const arrow = isUp ? '▲' : isDown ? '▼' : '—'
+  return (
+    <div className="rounded-2xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+      <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#9ca3af' }}>
+        {label}
+      </p>
+      <div className="flex items-baseline gap-2">
+        <p className="text-2xl font-bold" style={{ color: '#b8963e', fontFamily: "'DM Mono', monospace" }}>
+          {(Math.round(current * 10) / 10).toFixed(1)}
+          <span className="text-sm ml-1" style={{ color: '#9ca3af' }}>{unit}</span>
+        </p>
+        <p className="text-xs font-bold" style={{ color, fontFamily: "'DM Mono', monospace" }}>
+          {arrow} {Math.abs(Math.round(diff * 10) / 10).toFixed(1)}{unit}
+          {pct !== null && ` (${pct > 0 ? '+' : ''}${pct}%)`}
+        </p>
+      </div>
+      <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+        前期間: {(Math.round(previous * 10) / 10).toFixed(1)}{unit}
+      </p>
+    </div>
+  )
+}
+
+// ── 作業内容×場所クロステーブル ──
+function CrossTable({ reports }: { reports: any[] }) {
+  const { workTypes, locations, matrix } = useMemo(() => {
+    const wtSet = new Set<string>(), locSet = new Set<string>()
+    const map: Record<string, Record<string, number>> = {}
+    reports.forEach((r: any) => {
+      if (!r.work_type || !r.location) return
+      wtSet.add(r.work_type); locSet.add(r.location)
+      if (!map[r.work_type]) map[r.work_type] = {}
+      map[r.work_type][r.location] = (map[r.work_type][r.location] || 0) + Number(r.hours || 0)
+    })
+    return {
+      workTypes: Array.from(wtSet).sort(),
+      locations: Array.from(locSet).sort(),
+      matrix: map,
+    }
+  }, [reports])
+
+  if (workTypes.length === 0) return <NoData />
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+            <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>作業内容＼場所</th>
+            {locations.map((l) => (
+              <th key={l} className="text-center py-2 px-3 font-bold" style={{ color: '#6b7280' }}>{l}</th>
+            ))}
+            <th className="text-center py-2 px-3 font-bold" style={{ color: '#b8963e' }}>計</th>
+          </tr>
+        </thead>
+        <tbody>
+          {workTypes.map((wt) => {
+            const row = matrix[wt] || {}
+            const total = locations.reduce((s, l) => s + (row[l] || 0), 0)
+            return (
+              <tr key={wt} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <td className="py-2 px-3 font-medium" style={{ color: '#1f2937' }}>{wt}</td>
+                {locations.map((l) => {
+                  const v = row[l] || 0
+                  return (
+                    <td key={l} className="text-center py-2 px-3" style={{ color: v > 0 ? '#1f2937' : '#d1d5db', fontFamily: "'DM Mono', monospace" }}>
+                      {v > 0 ? (Math.round(v * 10) / 10).toFixed(1) : '—'}
+                    </td>
+                  )
+                })}
+                <td className="text-center py-2 px-3 font-bold" style={{ color: '#b8963e', fontFamily: "'DM Mono', monospace" }}>
+                  {(Math.round(total * 10) / 10).toFixed(1)}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // ── セクション1: 作業時間サマリ ──
 function WorkTimeSummary() {
   const periodState = usePeriod('month')
   const [byType, setByType] = useState<any[]>([])
   const [byEmp, setByEmp] = useState<any[]>([])
   const [byDay, setByDay] = useState<any[]>([])
+  const [rawReports, setRawReports] = useState<any[]>([])
+  const [prevTotal, setPrevTotal] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       const [from, to] = periodState.range()
-      const [t, e, d] = await Promise.all([
+      const [prevFrom, prevTo] = getPrevRange(from, to, periodState.period)
+      const supabase = createClient()
+      const [t, e, d, raw, prev] = await Promise.all([
         fetchWorkByType(from, to),
         fetchWorkByEmployee(from, to),
         fetchWorkByDay(from, to),
+        supabase
+          .from('work_reports')
+          .select('work_type, hours, location')
+          .gte('reported_at', `${from}T00:00:00+09:00`)
+          .lte('reported_at', `${to}T23:59:59+09:00`),
+        supabase
+          .from('work_reports')
+          .select('hours')
+          .gte('reported_at', `${prevFrom}T00:00:00+09:00`)
+          .lte('reported_at', `${prevTo}T23:59:59+09:00`),
       ])
       setByType(t)
       setByEmp(e)
       setByDay(d)
+      setRawReports(raw.data || [])
+      const prevSum = (prev.data || []).reduce((s: number, r: any) => s + Number(r.hours || 0), 0)
+      setPrevTotal(Math.round(prevSum * 10) / 10)
       setLoading(false)
     }
     load()
-  }, [periodState.range])
+  }, [periodState.range, periodState.period])
+
+  const currentTotal = useMemo(() => {
+    const sum = byType.reduce((s, t) => s + Number(t.hours || 0), 0)
+    return Math.round(sum * 10) / 10
+  }, [byType])
 
   return (
     <div>
@@ -178,6 +312,12 @@ function WorkTimeSummary() {
       {loading ? (
         <div className="text-center py-8" style={{ color: '#9ca3af' }}>読み込み中...</div>
       ) : (
+        <>
+          {/* 前期間比較 */}
+          <div className="mb-6">
+            <CompareCard label="作業時間（前期間比）" current={currentTotal} previous={prevTotal} unit="h" />
+          </div>
+
         <div className="grid grid-cols-2 gap-6">
           <Card title="作業内容別 合計時間">
             {byType.length === 0 ? <NoData /> : (
@@ -243,7 +383,14 @@ function WorkTimeSummary() {
               )}
             </Card>
           </div>
+
+          <div className="col-span-2">
+            <Card title="作業内容 × 場所 クロス集計（時間）">
+              <CrossTable reports={rawReports} />
+            </Card>
+          </div>
         </div>
+        </>
       )}
     </div>
   )

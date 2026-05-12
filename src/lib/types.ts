@@ -55,6 +55,7 @@ export type WorkMaster = {
   label: string
   category: 'A' | 'B'
   has_floor_count?: boolean
+  has_unit_count?: boolean
   has_bend_count?: boolean
   has_pole_count?: boolean
   display_order: number

@@ -304,6 +304,7 @@ function MasterPanel({
       if (extra.category !== undefined) updateData.category = extra.category
       if (extra.loss_type !== undefined) updateData.loss_type = extra.loss_type
       if (extra.has_floor_count !== undefined) updateData.has_floor_count = extra.has_floor_count
+      if (extra.has_unit_count !== undefined) updateData.has_unit_count = extra.has_unit_count
       if (extra.has_bend_count !== undefined) updateData.has_bend_count = extra.has_bend_count
       if (extra.has_pole_count !== undefined) updateData.has_pole_count = extra.has_pole_count
       const { error } = await supabase.from(table).update(updateData).eq('id', editId)
@@ -636,6 +637,122 @@ function EmployeePanel() {
   )
 }
 
+// ── 朝礼一括登録 ──
+function getMostRecentMonday() {
+  const d = new Date()
+  const day = d.getDay()
+  const back = day === 0 ? 6 : day - 1
+  d.setDate(d.getDate() - back)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function MorningPanel() {
+  const supabase = createClient()
+  const [date, setDate] = useState(getMostRecentMonday)
+  const [processing, setProcessing] = useState(false)
+  const [result, setResult] = useState<{ inserted: number; skipped: number; total: number } | null>(null)
+
+  const run = async () => {
+    if (!window.confirm(`${date} の朝礼（9:00までに出勤の従業員に「朝礼 0.25h」）を一括登録しますか？`)) return
+    setProcessing(true)
+    setResult(null)
+
+    // その日の出勤レコード取得（9:00までに clock_in）
+    const cutoff = `${date}T09:00:00+09:00`
+    const { data: tcs, error: tcErr } = await supabase
+      .from('timecards')
+      .select('employee_id, clock_in')
+      .eq('work_date', date)
+      .not('clock_in', 'is', null)
+      .lte('clock_in', cutoff)
+
+    if (tcErr) {
+      setProcessing(false)
+      alert('出勤者の取得に失敗しました: ' + tcErr.message)
+      return
+    }
+    const candidates = tcs || []
+
+    // 同日に既に朝礼登録済みの従業員を除外
+    const { data: existing } = await supabase
+      .from('work_reports')
+      .select('employee_id')
+      .eq('work_type', '朝礼')
+      .gte('reported_at', `${date}T00:00:00+09:00`)
+      .lte('reported_at', `${date}T23:59:59+09:00`)
+    const existingSet = new Set((existing || []).map((r: any) => r.employee_id))
+
+    const toInsert = candidates
+      .filter((c: any) => !existingSet.has(c.employee_id))
+      .map((c: any) => ({
+        reported_at: `${date}T09:00:00+09:00`,
+        employee_id: c.employee_id,
+        work_type: '朝礼',
+        work_category: 'B',
+        hours: 0.25,
+        location: null,
+      }))
+
+    if (toInsert.length === 0) {
+      setProcessing(false)
+      setResult({ inserted: 0, skipped: candidates.length, total: candidates.length })
+      return
+    }
+
+    const { error: insErr } = await supabase.from('work_reports').insert(toInsert)
+    setProcessing(false)
+    if (insErr) {
+      alert('登録に失敗しました: ' + insErr.message)
+      return
+    }
+    setResult({
+      inserted: toInsert.length,
+      skipped: candidates.length - toInsert.length,
+      total: candidates.length,
+    })
+  }
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-4" style={{ color: '#1f2937' }}>朝礼一括登録</h3>
+      <div className="rounded-xl p-5 mb-4" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+        <p className="text-sm mb-4" style={{ color: '#6b7280' }}>
+          指定日に9:00までに出勤している従業員へ、自動で「朝礼 0.25h」を一括登録します。
+          同日に既に朝礼が登録されている従業員はスキップされます。
+        </p>
+        <div className="flex items-end gap-3">
+          <div>
+            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>対象日</p>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="px-3 py-3 rounded-xl text-base focus:outline-none"
+              style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }}
+            />
+          </div>
+          <button
+            onClick={run}
+            disabled={processing}
+            className="px-6 py-3 rounded-xl text-sm font-bold text-white active:scale-95 transition-all disabled:opacity-50"
+            style={{ background: '#b8963e', boxShadow: '0 2px 12px rgba(184,150,62,0.2)' }}
+          >
+            {processing ? '処理中…' : '🌅 朝礼を一括登録'}
+          </button>
+        </div>
+      </div>
+      {result && (
+        <div className="rounded-xl p-5" style={{ background: '#faf6ed', border: '1.5px solid #e8dcc3' }}>
+          <p className="text-base font-bold mb-2" style={{ color: '#b8963e' }}>登録結果</p>
+          <p className="text-sm" style={{ color: '#1f2937' }}>
+            対象 {result.total}名 / 新規登録 {result.inserted}名 / 既登録スキップ {result.skipped}名
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── メニュー定義 ──
 const MENU = [
   { id: 'employees', label: '従業員管理', icon: '👤' },
@@ -643,6 +760,7 @@ const MENU = [
   { id: 'location', label: '場所マスタ', icon: '📍' },
   { id: 'variety', label: '品種マスタ', icon: '🌿' },
   { id: 'loss_reason', label: 'ロス理由マスタ', icon: '📋' },
+  { id: 'morning', label: '朝礼一括登録', icon: '🌅' },
   { id: 'csv_work', label: '作業報告CSV', icon: '📥' },
   { id: 'csv_loss', label: 'ロス報告CSV', icon: '📥' },
   { id: 'csv_timecard', label: 'タイムカードCSV', icon: '📥' },
@@ -721,7 +839,7 @@ export default function AdminPage() {
             items={workMaster.data}
             reload={workMaster.reload}
             usageCheck={{ table: 'work_reports', column: 'work_type' }}
-            extraDefaults={{ category: 'B', has_floor_count: false, has_bend_count: false, has_pole_count: false }}
+            extraDefaults={{ category: 'B', has_floor_count: false, has_unit_count: false, has_bend_count: false, has_pole_count: false }}
             extraColumns={[
               { key: 'category', label: 'カテゴリ', render: (item) => categoryBadge(item.category) },
             ]}
@@ -741,9 +859,10 @@ export default function AdminPage() {
                 </div>
                 <div className="flex flex-col gap-2 pb-1 justify-end">
                   {[
-                    { key: 'has_floor_count', label: '株数入力' },
-                    { key: 'has_bend_count', label: '曲げ数入力' },
-                    { key: 'has_pole_count', label: '立て数入力' },
+                    { key: 'has_floor_count', label: '個数（詳細）入力あり' },
+                    { key: 'has_unit_count', label: '個数（スライダー）入力あり' },
+                    { key: 'has_bend_count', label: '曲げ数入力あり' },
+                    { key: 'has_pole_count', label: '立て数入力あり' },
                   ].map((f) => (
                     <div key={f.key} className="flex items-center gap-2">
                       <Toggle
@@ -808,6 +927,8 @@ export default function AdminPage() {
             )}
           />
         )}
+
+        {section === 'morning' && <MorningPanel />}
 
         {section === 'csv_work' && <CsvWorkReport />}
         {section === 'csv_loss' && <CsvLossReport />}
