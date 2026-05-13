@@ -30,7 +30,14 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router = useRouter()
   const { role, loading } = useUserRole()
-  const { employees } = useEmployees()
+  // BEFORE: const { employees } = useEmployees()
+  const { employees, error: employeesError } = useEmployees()
+
+  useEffect(() => {
+    if (employeesError) {
+      console.error('[LayoutShell] employees load error:', employeesError)
+    }
+  }, [employeesError])
   const isLogin = pathname === '/login'
   const isAdmin = pathname === '/admin'
 
