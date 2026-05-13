@@ -35,12 +35,16 @@ export default function TimecardView({ employeeId }: { employeeId: string }) {
       return
     }
     const fetchTimecard = async () => {
-      const { data } = await supabase
+      // BEFORE: .single() は 0行で 406 を返すので maybeSingle に変更
+      const { data, error } = await supabase
         .from('timecards')
         .select('clock_in, clock_out')
         .eq('employee_id', empId)
         .eq('work_date', getToday())
-        .single()
+        .maybeSingle()
+      if (error) {
+        console.error('[TimecardView] fetchTimecard error:', error)
+      }
       if (data) {
         setClockIn(data.clock_in)
         setClockOut(data.clock_out)
