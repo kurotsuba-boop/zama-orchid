@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
 import { useWorkMaster, useLocationMaster } from '@/hooks/useMaster'
+import { useUserRole } from '@/hooks/useUserRole'
 import Chip from '@/components/Chip'
 import SliderInput from '@/components/SliderInput'
 import Label from '@/components/Label'
@@ -15,6 +16,12 @@ import Stepper from '@/components/Stepper'
 function getToday() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// 'YYYY-MM-DD' -> 'YYYY/MM/DD'（非admin用の読み取り専用表示）
+function formatDate(dateStr: string) {
+  if (!dateStr) return ''
+  return dateStr.replace(/-/g, '/')
 }
 
 type SuccessMode = null | 'create' | 'update'
@@ -34,7 +41,13 @@ export default function WorkReport({
 
   const empId = employeeId
 
+  // ロール: admin は日付自由（さかのぼり可）、一般は当日固定
+  const { role } = useUserRole()
+  const isAdmin = role === 'admin'
+
   const [date, setDate] = useState(getToday)
+  // 実時刻の当日（キオスク常時起動でも追従させる）
+  const [liveToday, setLiveToday] = useState(getToday)
   const [workType, setWorkType] = useState('')
   const [workCategory, setWorkCategory] = useState<'A' | 'B' | ''>('')
   const [hours, setHours] = useState(3.0)
@@ -61,6 +74,8 @@ export default function WorkReport({
   const hasPoleCount = currentWork?.has_pole_count === true
 
   const canSubmit = Boolean(empId && workType && hours > 0 && location && !submitting)
+  // ③: 当日分は誰でも修正可、過去日の修正/削除は admin のみ
+  const canModify = isAdmin || date === liveToday
 
   // 当日分の登録一覧取得
   const fetchTodayReports = useCallback(async () => {
@@ -82,6 +97,29 @@ export default function WorkReport({
   useEffect(() => {
     fetchTodayReports()
   }, [fetchTodayReports])
+
+  // ④バグ対策: 画面復帰/フォーカス/定期チェックで「当日」を実時刻に追従させる
+  // （キオスクを再起動せず夜間スリープすると date が前日のまま固定される問題）
+  useEffect(() => {
+    const sync = () => setLiveToday(getToday())
+    const onVisible = () => { if (document.visibilityState === 'visible') sync() }
+    sync()
+    window.addEventListener('focus', sync)
+    document.addEventListener('visibilitychange', onVisible)
+    const iv = setInterval(sync, 60000)
+    return () => {
+      window.removeEventListener('focus', sync)
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(iv)
+    }
+  }, [])
+
+  // ③: 一般作業者は日付を常に当日へ固定（編集中は触らない）。admin は自由。
+  useEffect(() => {
+    if (isAdmin) return
+    if (editingId) return
+    if (date !== liveToday) setDate(liveToday)
+  }, [isAdmin, editingId, liveToday, date])
 
   const resetSubCounts = () => {
     setCount1f(0); setCount2f(0); setCount3f(0); setCount4f(0); setCount5f(0); setCount5fOver(0)
@@ -307,22 +345,24 @@ export default function WorkReport({
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => handleEdit(r)}
-                      className="text-xs font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-all"
-                      style={{ color: '#b8963e', background: '#faf6ed', border: '1px solid #e8dcc3' }}
-                    >
-                      修正
-                    </button>
-                    <button
-                      onClick={() => handleDelete(r)}
-                      className="text-xs font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-all"
-                      style={{ color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca' }}
-                    >
-                      削除
-                    </button>
-                  </div>
+                  {canModify && (
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(r)}
+                        className="text-xs font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-all"
+                        style={{ color: '#b8963e', background: '#faf6ed', border: '1px solid #e8dcc3' }}
+                      >
+                        修正
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r)}
+                        className="text-xs font-bold px-2.5 py-1 rounded-lg active:scale-95 transition-all"
+                        style={{ color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca' }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -353,7 +393,18 @@ export default function WorkReport({
         <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3">
           <div>
             <Label>日付</Label>
-            <DatePicker value={date} onChange={setDate} />
+            {isAdmin ? (
+              <DatePicker value={date} onChange={setDate} />
+            ) : (
+              // 一般作業者は当日固定（過去日への書き込み・修正は admin のみ）
+              <div
+                className="w-full px-5 py-4 text-lg rounded-xl flex items-center justify-between"
+                style={{ background: '#f9fafb', color: '#1f2937', border: '1.5px solid #e5e7eb', fontFamily: "'DM Mono', monospace" }}
+              >
+                <span>{formatDate(date)}</span>
+                <span className="text-sm font-bold" style={{ color: '#b8963e', fontFamily: 'inherit' }}>本日</span>
+              </div>
+            )}
           </div>
 
           <div>
