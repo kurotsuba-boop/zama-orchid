@@ -24,6 +24,12 @@ function formatDate(dateStr: string) {
   return dateStr.replace(/-/g, '/')
 }
 
+// 種類別スライダーを出す作業（宅急便/ラボ準備）。ミディは共通、2本目だけ作業で切替。
+const VARIETY_WORK: Record<string, { midi: string; second: string; secondCol: 'count_orin' | 'count_other' }> = {
+  '宅急便': { midi: 'ミディ', second: '大輪', secondCol: 'count_orin' },
+  'ラボ準備': { midi: 'ミディ', second: 'その他', secondCol: 'count_other' },
+}
+
 type SuccessMode = null | 'create' | 'update'
 
 export default function WorkReport({
@@ -61,6 +67,9 @@ export default function WorkReport({
   const [bendCount, setBendCount] = useState(0)
   const [poleCount, setPoleCount] = useState(0)
   const [unitCount, setUnitCount] = useState(0)
+  const [countMidi, setCountMidi] = useState(0)
+  const [countOrin, setCountOrin] = useState(0)   // 大輪（宅急便）
+  const [countOther, setCountOther] = useState(0) // その他（ラボ準備）
   const [showConfirm, setShowConfirm] = useState(false)
   const [successMode, setSuccessMode] = useState<SuccessMode>(null)
   const [todayReports, setTodayReports] = useState<any[]>([])
@@ -68,10 +77,13 @@ export default function WorkReport({
   const [submitting, setSubmitting] = useState(false)
 
   const currentWork = workTypes.find((w) => w.label === workType)
-  const hasFloorCount = currentWork?.has_floor_count === true
-  const hasUnitCount = currentWork?.has_unit_count === true
-  const hasBendCount = currentWork?.has_bend_count === true
-  const hasPoleCount = currentWork?.has_pole_count === true
+  // 宅急便/ラボ準備は種類別スライダー（ミディ＋大輪/その他）。既存の個数系パネルは出さない。
+  const varietyCfg = VARIETY_WORK[workType] || null
+  const isVarietyWork = !!varietyCfg
+  const hasFloorCount = !isVarietyWork && currentWork?.has_floor_count === true
+  const hasUnitCount = !isVarietyWork && currentWork?.has_unit_count === true
+  const hasBendCount = !isVarietyWork && currentWork?.has_bend_count === true
+  const hasPoleCount = !isVarietyWork && currentWork?.has_pole_count === true
 
   const canSubmit = Boolean(empId && workType && hours > 0 && location && !submitting)
   // ③: 当日分は誰でも修正可、過去日の修正/削除は admin のみ
@@ -124,6 +136,7 @@ export default function WorkReport({
   const resetSubCounts = () => {
     setCount1f(0); setCount2f(0); setCount3f(0); setCount4f(0); setCount5f(0); setCount5fOver(0)
     setBendCount(0); setPoleCount(0); setUnitCount(0)
+    setCountMidi(0); setCountOrin(0); setCountOther(0)
   }
 
   // 作業関連だけリセット（氏名・日付は残す）
@@ -159,6 +172,9 @@ export default function WorkReport({
     setBendCount(r.bend_count ?? 0)
     setPoleCount(r.pole_count ?? 0)
     setUnitCount(r.unit_count ?? 0)
+    setCountMidi(r.count_midi ?? 0)
+    setCountOrin(r.count_orin ?? 0)
+    setCountOther(r.count_other ?? 0)
   }
 
   const cancelEdit = () => {
@@ -200,6 +216,9 @@ export default function WorkReport({
       bend_count: null,
       pole_count: null,
       unit_count: null,
+      count_midi: null,
+      count_orin: null,
+      count_other: null,
     }
     if (hasFloorCount) {
       payload.plant_count_1f = count1f
@@ -217,6 +236,11 @@ export default function WorkReport({
     }
     if (hasPoleCount) {
       payload.pole_count = poleCount
+    }
+    if (isVarietyWork && varietyCfg) {
+      payload.count_midi = countMidi
+      if (varietyCfg.secondCol === 'count_orin') payload.count_orin = countOrin
+      else payload.count_other = countOther
     }
 
     let error
@@ -246,6 +270,7 @@ export default function WorkReport({
     date,
     empName,
     `${workType}　${hours.toFixed(1)}h　${location}`,
+    ...(isVarietyWork && varietyCfg ? [`${varietyCfg.midi}:${countMidi} / ${varietyCfg.second}:${varietyCfg.secondCol === 'count_orin' ? countOrin : countOther}`] : []),
     ...(hasFloorCount ? [`個数 1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver}`] : []),
     ...(hasUnitCount ? [`個数: ${unitCount}`] : []),
     ...(hasBendCount ? [`曲げ数: ${bendCount} 本`] : []),
@@ -274,6 +299,9 @@ export default function WorkReport({
     if (r.unit_count && Number(r.unit_count) > 0) parts.push(`個数${r.unit_count}`)
     if (r.bend_count && Number(r.bend_count) > 0) parts.push(`曲げ${r.bend_count}本`)
     if (r.pole_count && Number(r.pole_count) > 0) parts.push(`立て${r.pole_count}本`)
+    if (r.count_midi && Number(r.count_midi) > 0) parts.push(`ミディ${r.count_midi}`)
+    if (r.count_orin && Number(r.count_orin) > 0) parts.push(`大輪${r.count_orin}`)
+    if (r.count_other && Number(r.count_other) > 0) parts.push(`その他${r.count_other}`)
     return parts.join(' · ')
   }
 
@@ -463,6 +491,41 @@ export default function WorkReport({
                   ))}
                 </div>
               </div>
+
+              {isVarietyWork && varietyCfg && (
+                <>
+                  <div>
+                    <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>{varietyCfg.midi}（個数）</p>
+                    <SliderInput
+                      value={countMidi}
+                      onChange={setCountMidi}
+                      min={0}
+                      max={300}
+                      step={1}
+                      unit="個"
+                      decimal={0}
+                      size="compact"
+                      showTicks={false}
+                      tight
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold mb-0.5" style={{ color: '#b8963e' }}>{varietyCfg.second}（個数）</p>
+                    <SliderInput
+                      value={varietyCfg.secondCol === 'count_orin' ? countOrin : countOther}
+                      onChange={varietyCfg.secondCol === 'count_orin' ? setCountOrin : setCountOther}
+                      min={0}
+                      max={300}
+                      step={1}
+                      unit="個"
+                      decimal={0}
+                      size="compact"
+                      showTicks={false}
+                      tight
+                    />
+                  </div>
+                </>
+              )}
 
               {hasFloorCount && (
                 <div>

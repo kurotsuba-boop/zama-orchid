@@ -64,19 +64,19 @@ function CsvWorkReport() {
     setLoading(true)
     const { data } = await supabase
       .from('work_reports')
-      .select('reported_at, employee_id, work_type, work_category, hours, location, plant_count, plant_count_3f, plant_count_5f, employees(name)')
+      .select('reported_at, employee_id, work_type, work_category, hours, location, plant_count, plant_count_3f, plant_count_5f, count_midi, count_orin, count_other, employees(name)')
       .gte('reported_at', `${from}T00:00:00+09:00`)
       .lte('reported_at', `${to}T23:59:59+09:00`)
       .order('reported_at')
     setLoading(false)
     if (!data || data.length === 0) { alert('データがありません'); return }
 
-    const header = ['日付', '時刻', '氏名', '作業内容', 'カテゴリ', '時間', '場所', '株数', '3F', '5F']
+    const header = ['日付', '時刻', '氏名', '作業内容', 'カテゴリ', '時間', '場所', '株数', '3F', '5F', 'ミディ', '大輪', 'その他']
     const rows = data.map((r: any) => {
       const dt = new Date(r.reported_at)
       const date = `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`
       const time = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
-      return [date, time, r.employees?.name || '', r.work_type, r.work_category, r.hours, r.location || '', r.plant_count ?? '', r.plant_count_3f ?? '', r.plant_count_5f ?? '']
+      return [date, time, r.employees?.name || '', r.work_type, r.work_category, r.hours, r.location || '', r.plant_count ?? '', r.plant_count_3f ?? '', r.plant_count_5f ?? '', r.count_midi ?? '', r.count_orin ?? '', r.count_other ?? '']
     })
     downloadCsv(`作業報告_${getToday()}.csv`, [header, ...rows])
   }
