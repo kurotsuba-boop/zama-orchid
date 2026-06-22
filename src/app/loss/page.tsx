@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
-import { GREENHOUSES, POSITIONS } from '@/lib/constants'
-import { useVarietyMaster, useLossReasonMaster } from '@/hooks/useMaster'
+import { GREENHOUSES } from '@/lib/constants'
+import { useVarietyMaster, useLossReasonMaster, usePositionMaster } from '@/hooks/useMaster'
 import Chip from '@/components/Chip'
 import Stepper from '@/components/Stepper'
 import SelectField from '@/components/SelectField'
@@ -30,6 +30,7 @@ export default function LossReportPage() {
   const { data: varieties } = useVarietyMaster()
   const { data: discardReasons } = useLossReasonMaster('discard')
   const { data: downgradeReasons } = useLossReasonMaster('downgrade')
+  const { data: positionOptions } = usePositionMaster()
   const [workDate, setWorkDate] = useState(getToday)
   const [arrivalDate, setArrivalDate] = useState('')
   const [empId, setEmpId] = useState('')
@@ -212,12 +213,12 @@ export default function LossReportPage() {
         <div>
           <Label>ポジション</Label>
           <div className="flex flex-wrap gap-2">
-            {POSITIONS.map((p) => (
+            {positionOptions.map((p) => (
               <Chip
-                key={p}
-                label={p}
-                active={positions.includes(p)}
-                onClick={() => toggleArray(positions, setPositions, p)}
+                key={p.id}
+                label={p.label}
+                active={positions.includes(p.label)}
+                onClick={() => toggleArray(positions, setPositions, p.label)}
               />
             ))}
           </div>
