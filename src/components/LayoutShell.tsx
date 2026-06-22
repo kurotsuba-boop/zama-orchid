@@ -31,7 +31,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const router = useRouter()
   const { role, loading } = useUserRole()
   // BEFORE: const { employees } = useEmployees()
-  const { employees, error: employeesError } = useEmployees()
+  const { employees, loading: employeesLoading, error: employeesError, refetch: refetchEmployees } = useEmployees()
 
   useEffect(() => {
     if (employeesError) {
@@ -97,6 +97,9 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     employees: employees.map((e) => ({ id: e.id, name: e.name })),
     selectedEmployeeId,
     onEmployeeChange: setSelectedEmployeeId,
+    employeesLoading,
+    employeesError,
+    onEmployeesRetry: refetchEmployees,
   }
 
   if (isAdmin) {

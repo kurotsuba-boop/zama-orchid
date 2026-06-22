@@ -15,6 +15,9 @@ type HeaderProps = {
   employees?: { id: string; name: string }[]
   selectedEmployeeId?: string
   onEmployeeChange?: (id: string) => void
+  employeesLoading?: boolean
+  employeesError?: string | null
+  onEmployeesRetry?: () => void
 }
 
 export default function Header({
@@ -25,6 +28,9 @@ export default function Header({
   employees,
   selectedEmployeeId,
   onEmployeeChange,
+  employeesLoading,
+  employeesError,
+  onEmployeesRetry,
 }: HeaderProps) {
   const router = useRouter()
   const [clock, setClock] = useState('')
@@ -67,6 +73,9 @@ export default function Header({
             onChange={onEmployeeChange}
             options={employees}
             placeholder="担当者を選択"
+            loading={employeesLoading}
+            error={employeesError}
+            onRetry={onEmployeesRetry}
           />
         )}
       </div>

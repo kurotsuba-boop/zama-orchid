@@ -8,11 +8,37 @@ type Props = {
   options: { id: string; name: string }[]
   placeholder: string
   compact?: boolean
+  // 状態表示（任意）: 渡さなければ従来通り
+  loading?: boolean
+  error?: string | null
+  onRetry?: () => void
 }
 
-export default function EmployeeSelectModal({ value, onChange, options, placeholder, compact = false }: Props) {
+export default function EmployeeSelectModal({
+  value,
+  onChange,
+  options,
+  placeholder,
+  compact = false,
+  loading = false,
+  error = null,
+  onRetry,
+}: Props) {
   const [open, setOpen] = useState(false)
   const selected = options.find((o) => o.id === value)
+
+  // 空のときの理由を出し分け（読み込み中 / 失敗 / 本当に0人）
+  const isLoadingEmpty = options.length === 0 && loading
+  const isErrorEmpty = options.length === 0 && !loading && !!error
+
+  // ボタンのラベル（未選択時）: 状態が分かるようにする
+  const buttonLabel = selected
+    ? selected.name
+    : isLoadingEmpty
+    ? '読み込み中…'
+    : isErrorEmpty
+    ? '再読込'
+    : placeholder
 
   const handleSelect = (id: string) => {
     onChange(id)
@@ -28,11 +54,11 @@ export default function EmployeeSelectModal({ value, onChange, options, placehol
           className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all whitespace-nowrap"
           style={{
             background: '#ffffff',
-            color: selected ? '#b8963e' : '#9ca3af',
-            border: `1.5px solid ${selected ? '#e8dcc3' : '#e5e7eb'}`,
+            color: selected ? '#b8963e' : isErrorEmpty ? '#dc2626' : '#9ca3af',
+            border: `1.5px solid ${selected ? '#e8dcc3' : isErrorEmpty ? '#fecaca' : '#e5e7eb'}`,
           }}
         >
-          <span className="truncate max-w-[140px]">{selected ? selected.name : placeholder}</span>
+          <span className="truncate max-w-[140px]">{buttonLabel}</span>
           <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor" className="flex-shrink-0">
             <path d="M4 7l5 5 5-5z" />
           </svg>
@@ -44,11 +70,11 @@ export default function EmployeeSelectModal({ value, onChange, options, placehol
           className="w-full px-5 py-4 text-lg font-medium rounded-xl focus:outline-none cursor-pointer text-left flex items-center justify-between active:scale-[0.99] transition-transform"
           style={{
             background: '#ffffff',
-            color: selected ? '#1f2937' : '#9ca3af',
-            border: '1.5px solid #e5e7eb',
+            color: selected ? '#1f2937' : isErrorEmpty ? '#dc2626' : '#9ca3af',
+            border: `1.5px solid ${isErrorEmpty ? '#fecaca' : '#e5e7eb'}`,
           }}
         >
-          <span className="truncate">{selected ? selected.name : placeholder}</span>
+          <span className="truncate">{buttonLabel}</span>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="#9ca3af" className="flex-shrink-0 ml-2">
             <path d="M4 7l5 5 5-5z" />
           </svg>
@@ -76,9 +102,34 @@ export default function EmployeeSelectModal({ value, onChange, options, placehol
 
             <div className="overflow-y-auto flex-1" style={{ maxHeight: '60vh' }}>
               {options.length === 0 ? (
-                <p className="text-center py-8 text-base" style={{ color: '#9ca3af' }}>
-                  選択肢がありません
-                </p>
+                isLoadingEmpty ? (
+                  <p className="text-center py-8 text-base" style={{ color: '#9ca3af' }}>
+                    読み込み中…
+                  </p>
+                ) : isErrorEmpty ? (
+                  <div className="text-center py-8">
+                    <p className="text-base mb-1" style={{ color: '#dc2626' }}>
+                      担当者の読み込みに失敗しました
+                    </p>
+                    <p className="text-xs mb-5" style={{ color: '#9ca3af' }}>
+                      通信状況をご確認ください
+                    </p>
+                    {onRetry && (
+                      <button
+                        type="button"
+                        onClick={() => onRetry()}
+                        className="px-6 py-3 rounded-xl text-base font-bold active:scale-95 transition-all"
+                        style={{ background: '#b8963e', color: '#fff', boxShadow: '0 2px 12px rgba(184,150,62,0.3)' }}
+                      >
+                        再試行
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center py-8 text-base" style={{ color: '#9ca3af' }}>
+                    選択肢がありません
+                  </p>
+                )
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   {options.map((o) => {
