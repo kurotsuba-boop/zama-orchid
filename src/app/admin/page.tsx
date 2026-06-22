@@ -8,6 +8,7 @@ import {
   useLocationMasterAll,
   useVarietyMasterAll,
   useLossReasonMasterAll,
+  usePositionMasterAll,
 } from '@/hooks/useMaster'
 import { useEmployees } from '@/hooks/useEmployees'
 import type {
@@ -16,6 +17,7 @@ import type {
   LocationMaster,
   VarietyMaster,
   LossReasonMaster,
+  WorkConfirmation,
 } from '@/lib/types'
 
 // ── CSV ユーティリティ ──
@@ -753,13 +755,87 @@ function MorningPanel() {
   )
 }
 
+// ── 作業確定の解除（要望1: 管理者のみ） ──
+function ConfirmationUnlockPanel() {
+  const supabase = createClient()
+  const { employees } = useEmployees()
+  const [rows, setRows] = useState<WorkConfirmation[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const load = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('work_confirmations')
+      .select('*')
+      .order('confirmed_date', { ascending: false })
+      .range(0, 9999)
+    setRows((data as WorkConfirmation[]) || [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const nameOf = (id: string) => employees.find((e) => e.id === id)?.name || '(不明)'
+
+  const handleUnlock = async (row: WorkConfirmation) => {
+    if (!window.confirm(`${nameOf(row.employee_id)} さんの ${row.confirmed_date} の作業確定を解除しますか？`)) return
+    const { error } = await supabase.from('work_confirmations').delete().eq('id', row.id)
+    if (error) { alert('解除に失敗しました: ' + error.message); return }
+    load()
+  }
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-2" style={{ color: '#1f2937' }}>作業確定の解除</h3>
+      <p className="text-sm mb-4" style={{ color: '#6b7280' }}>
+        確定済みの従業員・日付を解除すると、その作業者は当日分の入力・修正が再びできるようになります。
+      </p>
+      <div className="rounded-xl overflow-hidden overflow-y-auto" style={{ ...cardStyle, maxHeight: 'calc(100vh - 280px)' }}>
+        <table className="w-full text-sm">
+          <thead className="sticky top-0" style={{ background: '#f9fafb' }}>
+            <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+              <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>氏名</th>
+              <th className="text-left py-3 px-4 font-bold w-40" style={{ color: '#6b7280' }}>確定日</th>
+              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#6b7280' }}>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <td className="py-3 px-4 font-medium" style={{ color: '#1f2937' }}>{nameOf(row.employee_id)}</td>
+                <td className="py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#6b7280' }}>
+                  {row.confirmed_date}
+                </td>
+                <td className="text-center py-3 px-4">
+                  <button
+                    onClick={() => handleUnlock(row)}
+                    className="text-sm font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+                    style={{ color: '#dc2626', background: '#fef2f2' }}
+                  >
+                    解除
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {!loading && rows.length === 0 && (
+              <tr><td colSpan={3} className="text-center py-8" style={{ color: '#9ca3af' }}>確定済みの記録はありません</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // ── メニュー定義 ──
 const MENU = [
   { id: 'employees', label: '従業員管理', icon: '👤' },
   { id: 'work', label: '作業内容マスタ', icon: '🔨' },
   { id: 'location', label: '場所マスタ', icon: '📍' },
+  { id: 'position', label: '作業区域マスタ', icon: '🧭' },
   { id: 'variety', label: '品種マスタ', icon: '🌿' },
   { id: 'loss_reason', label: 'ロス理由マスタ', icon: '📋' },
+  { id: 'confirmation', label: '作業確定の解除', icon: '🔓' },
   { id: 'morning', label: '朝礼一括登録', icon: '🌅' },
   { id: 'csv_work', label: '作業報告CSV', icon: '📥' },
   { id: 'csv_loss', label: 'ロス報告CSV', icon: '📥' },
@@ -775,6 +851,7 @@ export default function AdminPage() {
   const locationMaster = useLocationMasterAll()
   const varietyMaster = useVarietyMasterAll()
   const lossReasonMaster = useLossReasonMasterAll()
+  const positionMaster = usePositionMasterAll()
 
   const categoryBadge = (cat: string) => (
     <span
@@ -890,6 +967,15 @@ export default function AdminPage() {
           />
         )}
 
+        {section === 'position' && (
+          <MasterPanel
+            title="作業区域マスタ"
+            table="position_master"
+            items={positionMaster.data}
+            reload={positionMaster.reload}
+          />
+        )}
+
         {section === 'variety' && (
           <MasterPanel
             title="品種マスタ"
@@ -927,6 +1013,8 @@ export default function AdminPage() {
             )}
           />
         )}
+
+        {section === 'confirmation' && <ConfirmationUnlockPanel />}
 
         {section === 'morning' && <MorningPanel />}
 

@@ -30,7 +30,7 @@ const VARIETY_WORK: Record<string, { midi: string; second: string; secondCol: 'c
   'ラボ準備': { midi: 'ミディ', second: 'その他', secondCol: 'count_other' },
 }
 
-type SuccessMode = null | 'create' | 'update'
+type SuccessMode = null | 'create' | 'update' | 'finalize'
 
 export default function WorkReport({
   employeeId,
@@ -75,6 +75,10 @@ export default function WorkReport({
   const [todayReports, setTodayReports] = useState<any[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // 要望1: 作業確定ロック（選択中の作業者 × liveToday が確定済みか）
+  const [isConfirmedToday, setIsConfirmedToday] = useState(false)
+  const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
+  const [finalizing, setFinalizing] = useState(false)
 
   const currentWork = workTypes.find((w) => w.label === workType)
   // 宅急便/ラボ準備は種類別スライダー（ミディ＋大輪/その他）。既存の個数系パネルは出さない。
@@ -88,6 +92,9 @@ export default function WorkReport({
   const canSubmit = Boolean(empId && workType && hours > 0 && location && !submitting)
   // ③: 当日分は誰でも修正可、過去日の修正/削除は admin のみ
   const canModify = isAdmin || date === liveToday
+  // 要望1: 選択中の作業者が liveToday を確定済みなら、当日分は入力・編集不可。
+  //        他日付（admin がさかのぼり編集中）は従来通り入力可。
+  const lockedToday = isConfirmedToday && date === liveToday
 
   // 当日分の登録一覧取得
   const fetchTodayReports = useCallback(async () => {
@@ -109,6 +116,26 @@ export default function WorkReport({
   useEffect(() => {
     fetchTodayReports()
   }, [fetchTodayReports])
+
+  // 要望1: 選択中の作業者 × liveToday の確定状態を取得
+  const fetchConfirmation = useCallback(async () => {
+    if (!empId) {
+      setIsConfirmedToday(false)
+      return
+    }
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('work_confirmations')
+      .select('id')
+      .eq('employee_id', empId)
+      .eq('confirmed_date', liveToday)
+      .maybeSingle()
+    setIsConfirmedToday(!!data)
+  }, [empId, liveToday])
+
+  useEffect(() => {
+    fetchConfirmation()
+  }, [fetchConfirmation])
 
   // ④バグ対策: 画面復帰/フォーカス/定期チェックで「当日」を実時刻に追従させる
   // （キオスクを再起動せず夜間スリープすると date が前日のまま固定される問題）
@@ -265,11 +292,35 @@ export default function WorkReport({
     setSuccessMode(wasEdit ? 'update' : 'create')
   }
 
+  // 要望1: 最終確定（liveToday を確定 → 当日分ロック）
+  const handleFinalize = async () => {
+    setShowFinalizeConfirm(false)
+    setFinalizing(true)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('work_confirmations')
+      .insert({ employee_id: empId, confirmed_date: liveToday })
+    setFinalizing(false)
+    if (error) {
+      // unique 制約違反 = 既に確定済み。それ以外はエラー表示。
+      await fetchConfirmation()
+      if (!error.message.includes('duplicate') && error.code !== '23505') {
+        alert('確定に失敗しました: ' + error.message)
+        return
+      }
+    }
+    await fetchConfirmation()
+    setSuccessMode('finalize')
+  }
+
   const empName = employees.find((e) => e.id === empId)?.name || ''
+  // 要望3: 潅水のときだけ確認ポップアップに塩素・液肥の確認を出す
+  const isKansui = workType === '潅水'
   const confirmLines = [
     date,
     empName,
     `${workType}　${hours.toFixed(1)}h　${location}`,
+    ...(isKansui ? ['⚠ 塩素・液肥は止めましたか？'] : []),
     ...(isVarietyWork && varietyCfg ? [`${varietyCfg.midi}:${countMidi} / ${varietyCfg.second}:${varietyCfg.secondCol === 'count_orin' ? countOrin : countOther}`] : []),
     ...(hasFloorCount ? [`個数 1F:${count1f} / 2F:${count2f} / 3F:${count3f} / 4F:${count4f} / 5F:${count5f} / 5F以上:${count5fOver}`] : []),
     ...(hasUnitCount ? [`個数: ${unitCount}`] : []),
@@ -373,7 +424,7 @@ export default function WorkReport({
                       </span>
                     )}
                   </div>
-                  {canModify && (
+                  {canModify && !lockedToday && (
                     <div className="flex gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => handleEdit(r)}
@@ -415,7 +466,26 @@ export default function WorkReport({
         </div>
       )}
 
-      {/* メイン2カラム */}
+      {/* メイン2カラム（確定済みのときはロック表示に切替） */}
+      {lockedToday ? (
+        <div
+          className="flex-1 flex items-center justify-center rounded-2xl"
+          style={{ border: '2px dashed #e8dcc3', background: '#faf6ed' }}
+        >
+          <div className="text-center px-6">
+            <p className="text-5xl mb-4">🔒</p>
+            <p className="text-2xl font-bold mb-2" style={{ color: '#b8963e' }}>
+              確定済み（変更不可）
+            </p>
+            <p className="text-base" style={{ color: '#6b7280' }}>
+              <span className="font-bold" style={{ color: '#1f2937' }}>{empName}</span> さんの本日の作業は確定済みです
+            </p>
+            <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+              修正が必要な場合は管理者に解除を依頼してください
+            </p>
+          </div>
+        </div>
+      ) : (
       <div className="flex gap-8 flex-1 min-h-0">
         {/* 左カラム: 入力 */}
         <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3">
@@ -636,8 +706,21 @@ export default function WorkReport({
           >
             {editingId ? '更新する' : 'この内容で登録 ✓'}
           </button>
+
+          {/* 要望1: 最終確定（当日のみ表示。押すと当日分がロックされる） */}
+          {date === liveToday && (
+            <button
+              disabled={finalizing || todayReports.length === 0}
+              onClick={() => setShowFinalizeConfirm(true)}
+              className="py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97] disabled:opacity-30 flex-shrink-0"
+              style={{ background: '#ffffff', color: '#b8963e', border: '2px solid #b8963e' }}
+            >
+              🔒 最終確定（本日の作業を確定）
+            </button>
+          )}
         </div>
       </div>
+      )}
 
       {showConfirm && (
         <ConfirmModal
@@ -646,6 +729,46 @@ export default function WorkReport({
           onCancel={() => setShowConfirm(false)}
         />
       )}
+
+      {/* 要望1: 最終確定の確認（作業者名を強調） */}
+      {showFinalizeConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={() => setShowFinalizeConfirm(false)}
+          style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="rounded-3xl p-10 max-w-md w-full mx-4 shadow-2xl"
+            style={{ background: '#ffffff', animation: 'slideUp 0.25s ease' }}
+          >
+            <p className="text-xl font-bold mb-6" style={{ color: '#1f2937' }}>作業の最終確定</p>
+            <p className="text-xl mb-3" style={{ color: '#1f2937' }}>
+              <span className="font-bold text-2xl" style={{ color: '#b8963e' }}>{empName}</span> さん、
+            </p>
+            <p className="text-lg mb-2" style={{ color: '#6b7280' }}>これで本日の作業を確定しますか？</p>
+            <p className="text-sm mb-8" style={{ color: '#9ca3af' }}>確定後は本日分の入力・修正ができなくなります（解除は管理者のみ）。</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowFinalizeConfirm(false)}
+                className="flex-1 py-5 rounded-xl text-lg font-bold"
+                style={{ background: '#f3f4f6', color: '#6b7280' }}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleFinalize}
+                disabled={finalizing}
+                className="flex-1 py-5 rounded-xl text-lg font-bold text-white disabled:opacity-40"
+                style={{ background: '#b8963e', boxShadow: '0 4px 16px rgba(184,150,62,0.3)' }}
+              >
+                確定する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {successMode === 'create' && (
         <SuccessOverlay
           emoji="🌸"
@@ -661,6 +784,17 @@ export default function WorkReport({
         <SuccessOverlay
           emoji="✨"
           message="更新しました！"
+          onDone={() => {
+            setSuccessMode(null)
+            resetWork()
+            onResetEmployee?.()
+          }}
+        />
+      )}
+      {successMode === 'finalize' && (
+        <SuccessOverlay
+          emoji="🔒"
+          message="本日の作業を確定しました！お疲れ様でした"
           onDone={() => {
             setSuccessMode(null)
             resetWork()

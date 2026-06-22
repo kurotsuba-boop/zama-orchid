@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import type { WorkMaster, LocationMaster, VarietyMaster, LossReasonMaster } from '@/lib/types'
+import type { WorkMaster, LocationMaster, VarietyMaster, LossReasonMaster, PositionMaster } from '@/lib/types'
 
 function useFetch<T>(table: string, filter?: Record<string, any>) {
   const [data, setData] = useState<T[]>([])
@@ -46,6 +46,10 @@ export function useLossReasonMaster(lossType?: 'discard' | 'downgrade') {
   return useFetch<LossReasonMaster>('loss_reason_master', filter)
 }
 
+export function usePositionMaster() {
+  return useFetch<PositionMaster>('position_master', { is_active: true })
+}
+
 // 全件取得（管理画面用）
 export function useWorkMasterAll() {
   return useFetch<WorkMaster>('work_master')
@@ -61,4 +65,8 @@ export function useVarietyMasterAll() {
 
 export function useLossReasonMasterAll() {
   return useFetch<LossReasonMaster>('loss_reason_master')
+}
+
+export function usePositionMasterAll() {
+  return useFetch<PositionMaster>('position_master')
 }
