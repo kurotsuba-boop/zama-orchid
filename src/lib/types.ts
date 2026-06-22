@@ -87,3 +87,19 @@ export type LossReasonMaster = {
   is_active: boolean
   created_at: string
 }
+
+export type PositionMaster = {
+  id: string
+  label: string
+  display_order: number
+  is_active: boolean
+  created_at: string
+}
+
+export type WorkConfirmation = {
+  id: string
+  employee_id: string
+  confirmed_date: string
+  confirmed_at: string
+  created_at: string
+}

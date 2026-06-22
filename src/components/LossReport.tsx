@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
-import { GREENHOUSES, POSITIONS } from '@/lib/constants'
-import { useVarietyMaster, useLossReasonMaster } from '@/hooks/useMaster'
+import { GREENHOUSES } from '@/lib/constants'
+import { useVarietyMaster, useLossReasonMaster, usePositionMaster } from '@/hooks/useMaster'
 import Chip from '@/components/Chip'
 import Stepper from '@/components/Stepper'
 import Label from '@/components/Label'
@@ -35,6 +35,7 @@ export default function LossReport({
   const { data: varieties } = useVarietyMaster()
   const { data: discardReasons } = useLossReasonMaster('discard')
   const { data: downgradeReasons } = useLossReasonMaster('downgrade')
+  const { data: positionOptions } = usePositionMaster()
   const [workDate, setWorkDate] = useState(getToday)
   const [arrivalDate, setArrivalDate] = useState('')
   const empId = employeeId
@@ -219,12 +220,12 @@ export default function LossReport({
           <div>
             <Label>作業区域</Label>
             <div className="flex flex-wrap gap-2">
-              {POSITIONS.map((p) => (
+              {positionOptions.map((p) => (
                 <Chip
-                  key={p}
-                  label={p}
-                  active={positions.includes(p)}
-                  onClick={() => toggleArray(positions, setPositions, p)}
+                  key={p.id}
+                  label={p.label}
+                  active={positions.includes(p.label)}
+                  onClick={() => toggleArray(positions, setPositions, p.label)}
                 />
               ))}
             </div>
