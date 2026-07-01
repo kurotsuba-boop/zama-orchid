@@ -480,6 +480,7 @@ function EmployeePanel() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', display_order: 0 })
   const [saving, setSaving] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const load = async () => {
     const { data } = await supabase.from('employees').select('*').order('display_order').range(0, 9999)
@@ -502,6 +503,8 @@ function EmployeePanel() {
 
   const save = async () => {
     if (!form.name.trim()) return
+    const wasNew = !editId
+    const savedName = form.name.trim()
     setSaving(true)
     if (editId) {
       const { error } = await supabase.from('employees').update({ name: form.name, display_order: form.display_order }).eq('id', editId)
@@ -513,6 +516,8 @@ function EmployeePanel() {
     setSaving(false)
     cancelEdit()
     load()
+    // 対策2: 追加は各端末が再取得するまで反映されないため、周知メッセージを出す
+    if (wasNew) setNotice(`「${savedName}」を追加しました。各端末（iPad）で画面右上の 🔄、またはページ再読込で反映されます。`)
   }
 
   const toggleActive = async (id: string, current: boolean) => {
@@ -551,6 +556,13 @@ function EmployeePanel() {
           + 新規追加
         </button>
       </div>
+
+      {notice && (
+        <div className="rounded-xl px-4 py-3 mb-4 flex items-start justify-between gap-3" style={{ background: '#faf6ed', border: '1.5px solid #e8dcc3' }}>
+          <p className="text-sm font-bold" style={{ color: '#b8963e' }}>✅ {notice}</p>
+          <button onClick={() => setNotice(null)} className="text-sm font-bold flex-shrink-0" style={{ color: '#9ca3af' }}>✕</button>
+        </div>
+      )}
 
       {showForm && (
         <div className="rounded-xl p-5 mb-4" style={{ background: '#faf6ed', border: '1px solid #e8dcc3' }}>
@@ -827,6 +839,67 @@ function ConfirmationUnlockPanel() {
   )
 }
 
+// ── 時間入力設定（要望2: 対応時間の分刻み） ──
+function TimeStepPanel() {
+  const supabase = createClient()
+  const [step, setStep] = useState<number | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const load = async () => {
+    const { data } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'time_step_minutes')
+      .maybeSingle()
+    const n = data?.value ? parseInt(data.value, 10) : 10
+    setStep(n === 10 || n === 15 || n === 30 ? n : 10)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const save = async (v: number) => {
+    setSaving(true)
+    setSaved(false)
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ key: 'time_step_minutes', value: String(v), updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    setSaving(false)
+    if (error) {
+      alert('保存に失敗しました: ' + error.message + '\n（006_system_settings.sql が未適用の可能性があります）')
+      return
+    }
+    setStep(v)
+    setSaved(true)
+  }
+
+  return (
+    <div>
+      <h3 className="text-lg font-bold mb-2" style={{ color: '#1f2937' }}>時間入力設定</h3>
+      <p className="text-sm mb-4" style={{ color: '#6b7280' }}>
+        作業報告「対応時間」の分の刻み幅です。変更すると各端末で次回の読み込み以降に反映されます。
+      </p>
+      <div className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
+        <p className="text-xs font-bold mb-2" style={{ color: '#9ca3af' }}>時間入力の刻み（分）</p>
+        <div className="flex gap-2">
+          {[10, 15, 30].map((v) => (
+            <button
+              key={v}
+              onClick={() => save(v)}
+              disabled={saving || step === null}
+              className="px-6 py-3 rounded-xl text-base font-bold active:scale-95 transition-all disabled:opacity-40"
+              style={step === v ? goldBtn : grayBtn}
+            >
+              {v}分
+            </button>
+          ))}
+        </div>
+        {saved && <p className="text-sm font-bold mt-3" style={{ color: '#b8963e' }}>✓ 保存しました</p>}
+      </div>
+    </div>
+  )
+}
+
 // ── メニュー定義 ──
 const MENU = [
   { id: 'employees', label: '従業員管理', icon: '👤' },
@@ -836,6 +909,7 @@ const MENU = [
   { id: 'variety', label: '品種マスタ', icon: '🌿' },
   { id: 'loss_reason', label: 'ロス理由マスタ', icon: '📋' },
   { id: 'confirmation', label: '作業確定の解除', icon: '🔓' },
+  { id: 'time_step', label: '時間入力設定', icon: '⏱️' },
   { id: 'morning', label: '朝礼一括登録', icon: '🌅' },
   { id: 'csv_work', label: '作業報告CSV', icon: '📥' },
   { id: 'csv_loss', label: 'ロス報告CSV', icon: '📥' },
@@ -1015,6 +1089,8 @@ export default function AdminPage() {
         )}
 
         {section === 'confirmation' && <ConfirmationUnlockPanel />}
+
+        {section === 'time_step' && <TimeStepPanel />}
 
         {section === 'morning' && <MorningPanel />}
 

@@ -70,3 +70,34 @@ export function useLossReasonMasterAll() {
 export function usePositionMasterAll() {
   return useFetch<PositionMaster>('position_master')
 }
+
+// システム設定: 対応時間入力の分刻み（system_settings.time_step_minutes）。
+// テーブル未作成 / 行なし / 取得失敗のときは既定 10 分にフォールバック
+// （006_system_settings.sql 適用前にデプロイしても壊れないため）。
+export function useTimeStepMinutes(): number {
+  const [step, setStep] = useState(10)
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'time_step_minutes')
+          .maybeSingle()
+        if (!active || error || !data?.value) return
+        const n = parseInt(data.value, 10)
+        if (n === 10 || n === 15 || n === 30) setStep(n)
+      } catch {
+        /* 未作成などは既定 10 のまま */
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  return step
+}

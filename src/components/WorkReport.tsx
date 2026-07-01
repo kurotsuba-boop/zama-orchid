@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useEmployees } from '@/hooks/useEmployees'
-import { useWorkMaster, useLocationMaster } from '@/hooks/useMaster'
+import { useWorkMaster, useLocationMaster, useTimeStepMinutes } from '@/hooks/useMaster'
 import { useUserRole } from '@/hooks/useUserRole'
 import Chip from '@/components/Chip'
 import SliderInput from '@/components/SliderInput'
+import TimeBlockInput from '@/components/TimeBlockInput'
 import Label from '@/components/Label'
 import DatePicker from '@/components/DatePicker'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -42,6 +43,8 @@ export default function WorkReport({
   const { employees } = useEmployees()
   const { data: workTypes } = useWorkMaster()
   const { data: locations } = useLocationMaster()
+  // 対応時間の分刻み（system_settings。未設定なら既定10）
+  const timeStep = useTimeStepMinutes()
   const workA = workTypes.filter((w) => w.category === 'A')
   const workB = workTypes.filter((w) => w.category === 'B')
 
@@ -487,8 +490,10 @@ export default function WorkReport({
         </div>
       ) : (
       <div className="flex gap-8 flex-1 min-h-0">
-        {/* 左カラム: 入力 */}
-        <div className="flex-1 flex flex-col gap-5 overflow-y-auto pr-3">
+        {/* 左カラム: 入力 + 登録ボタン（下部固定・右カラムから移設） */}
+        <div className="flex-1 flex flex-col gap-3 min-h-0">
+          {/* スクロール領域（日付・作業選択） */}
+          <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-y-auto pr-3">
           <div>
             <Label>日付</Label>
             {isAdmin ? (
@@ -530,9 +535,36 @@ export default function WorkReport({
               ))}
             </div>
           </div>
+          </div>
+
+          {/* 登録ボタン（右カラムから左下へ移設: スライダー操作中の誤タップ防止） */}
+          <button
+            disabled={!canSubmit}
+            onClick={() => setShowConfirm(true)}
+            className="py-4 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25 flex-shrink-0"
+            style={{
+              background: canSubmit ? '#b8963e' : '#e5e7eb',
+              boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
+              animation: canSubmit && !editingId ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
+            }}
+          >
+            {editingId ? '更新する' : 'この内容で登録 ✓'}
+          </button>
+
+          {/* 最終確定（当日のみ表示。押すと当日分がロックされる） */}
+          {date === liveToday && (
+            <button
+              disabled={finalizing || todayReports.length === 0}
+              onClick={() => setShowFinalizeConfirm(true)}
+              className="py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97] disabled:opacity-30 flex-shrink-0"
+              style={{ background: '#ffffff', color: '#b8963e', border: '2px solid #b8963e' }}
+            >
+              🔒 最終確定（本日の作業を確定）
+            </button>
+          )}
         </div>
 
-        {/* 右カラム: 詳細パネル + 登録ボタン */}
+        {/* 右カラム: 詳細パネル（入力のみ・登録ボタンは左下へ移設） */}
         <div className="w-[450px] h-full flex flex-col gap-2 flex-shrink-0">
           {workType ? (
             <div
@@ -545,7 +577,7 @@ export default function WorkReport({
             >
               <div>
                 <Label>対応時間</Label>
-                <SliderInput value={hours} onChange={setHours} size="medium" showTicks={false} tight />
+                <TimeBlockInput value={hours} onChange={setHours} stepMinutes={timeStep} />
               </div>
 
               <div>
@@ -694,30 +726,6 @@ export default function WorkReport({
             </div>
           )}
 
-          <button
-            disabled={!canSubmit}
-            onClick={() => setShowConfirm(true)}
-            className="py-4 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25 flex-shrink-0"
-            style={{
-              background: canSubmit ? '#b8963e' : '#e5e7eb',
-              boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
-              animation: canSubmit && !editingId ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
-            }}
-          >
-            {editingId ? '更新する' : 'この内容で登録 ✓'}
-          </button>
-
-          {/* 要望1: 最終確定（当日のみ表示。押すと当日分がロックされる） */}
-          {date === liveToday && (
-            <button
-              disabled={finalizing || todayReports.length === 0}
-              onClick={() => setShowFinalizeConfirm(true)}
-              className="py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97] disabled:opacity-30 flex-shrink-0"
-              style={{ background: '#ffffff', color: '#b8963e', border: '2px solid #b8963e' }}
-            >
-              🔒 最終確定（本日の作業を確定）
-            </button>
-          )}
         </div>
       </div>
       )}

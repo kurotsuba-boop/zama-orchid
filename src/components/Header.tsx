@@ -78,6 +78,18 @@ export default function Header({
             onRetry={onEmployeesRetry}
           />
         )}
+        {/* 対策3: 担当者リストを手動で再取得（新規従業員が出ないときのため） */}
+        {onEmployeesRetry && (
+          <button
+            onClick={onEmployeesRetry}
+            disabled={employeesLoading}
+            className="flex items-center justify-center w-9 h-9 rounded-lg active:scale-90 transition-all flex-shrink-0 disabled:opacity-40"
+            style={{ background: '#faf6ed', border: '1px solid #e8dcc3' }}
+            title="担当者リストを更新"
+          >
+            <span className="text-base">🔄</span>
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#f5f3ef' }}>

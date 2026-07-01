@@ -37,7 +37,9 @@ export function useEmployees() {
     if (inFlightRef.current) return
     inFlightRef.current = true
 
-    const supabase = createClient()
+    // 対策1: 従業員取得は no-store で行い、古いキャッシュ応答を掴まない
+    // （新規追加した従業員が反映されない再発への保険）
+    const supabase = createClient({ noStore: true })
     const runQuery = () =>
       supabase
         .from('employees')
