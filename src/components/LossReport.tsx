@@ -177,10 +177,10 @@ export default function LossReport({
       <div className="flex items-center justify-center h-full" style={{ animation: 'fadeIn 0.3s' }}>
         <div className="text-center">
           <p className="text-6xl mb-4">👤</p>
-          <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+          <p className="text-xl font-semibold" style={{ color: '#6b7280' }}>
             担当者を選択してください
           </p>
-          <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+          <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
             ヘッダーの「担当者を選択」をタップ
           </p>
         </div>
@@ -302,7 +302,7 @@ export default function LossReport({
                         <div key={r.id} className="flex flex-col items-center gap-1.5">
                           <div className="flex items-center gap-1">
                             <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#dc2626' }} />
-                            <p className="text-xs font-semibold" style={{ color: '#6b7280' }}>
+                            <p className="text-xs font-semibold" style={{ color: '#4b5563' }}>
                               {r.label}
                             </p>
                           </div>
@@ -326,7 +326,7 @@ export default function LossReport({
                         <div key={r.id} className="flex flex-col items-center gap-1.5">
                           <div className="flex items-center gap-1">
                             <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#d97706' }} />
-                            <p className="text-xs font-semibold" style={{ color: '#6b7280' }}>
+                            <p className="text-xs font-semibold" style={{ color: '#4b5563' }}>
                               {r.label}
                             </p>
                           </div>

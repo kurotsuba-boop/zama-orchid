@@ -94,7 +94,7 @@ function PeriodSelector({
           style={
             period === c.key
               ? { background: '#b8963e', color: '#fff', boxShadow: '0 2px 8px rgba(184,150,62,0.25)' }
-              : { background: '#f3f4f6', color: '#9ca3af' }
+              : { background: '#f3f4f6', color: '#6b7280' }
           }
         >
           {c.label}
@@ -109,7 +109,7 @@ function PeriodSelector({
             className="px-3 py-2 rounded-lg text-sm focus:outline-none"
             style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }}
           />
-          <span style={{ color: '#9ca3af' }}>〜</span>
+          <span style={{ color: '#6b7280' }}>〜</span>
           <input
             type="date"
             value={customTo}
@@ -125,7 +125,7 @@ function PeriodSelector({
 
 function NoData() {
   return (
-    <div className="flex items-center justify-center py-12" style={{ color: '#9ca3af' }}>
+    <div className="flex items-center justify-center py-12" style={{ color: '#6b7280' }}>
       データがありません
     </div>
   )
@@ -164,7 +164,7 @@ function WorkTimeSummary() {
       <PeriodSelector {...periodState} />
 
       {loading ? (
-        <div className="text-center py-8" style={{ color: '#9ca3af' }}>読み込み中...</div>
+        <div className="text-center py-8" style={{ color: '#6b7280' }}>読み込み中...</div>
       ) : (
         <div className="grid grid-cols-2 gap-6">
           <Card title="作業内容別 合計時間">
@@ -304,7 +304,7 @@ function LossAnalysis() {
       <PeriodSelector {...periodState} />
 
       {loading ? (
-        <div className="text-center py-8" style={{ color: '#9ca3af' }}>読み込み中...</div>
+        <div className="text-center py-8" style={{ color: '#6b7280' }}>読み込み中...</div>
       ) : (
         <div className="grid grid-cols-2 gap-6">
           <div className="col-span-2">
@@ -395,14 +395,14 @@ function AttendanceSummary() {
         <table className="w-full text-sm" style={{ minWidth: '800px' }}>
           <thead>
             <tr>
-              <th className="text-left py-2 px-3 font-semibold" style={{ color: '#6b7280', width: '100px' }}>
+              <th className="text-left py-2 px-3 font-semibold" style={{ color: '#4b5563', width: '100px' }}>
                 氏名
               </th>
               {days.map((d) => (
                 <th
                   key={d}
                   className="text-center py-2 font-normal"
-                  style={{ color: '#9ca3af', fontSize: '11px', width: '28px' }}
+                  style={{ color: '#6b7280', fontSize: '11px', width: '28px' }}
                 >
                   {d}
                 </th>
@@ -448,7 +448,7 @@ function AttendanceSummary() {
         <button
           onClick={prevMonth}
           className="px-3 py-2 rounded-lg text-sm font-bold"
-          style={{ background: '#f3f4f6', color: '#6b7280' }}
+          style={{ background: '#f3f4f6', color: '#4b5563' }}
         >
           ◀
         </button>
@@ -458,14 +458,14 @@ function AttendanceSummary() {
         <button
           onClick={nextMonth}
           className="px-3 py-2 rounded-lg text-sm font-bold"
-          style={{ background: '#f3f4f6', color: '#6b7280' }}
+          style={{ background: '#f3f4f6', color: '#4b5563' }}
         >
           ▶
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-8" style={{ color: '#9ca3af' }}>読み込み中...</div>
+        <div className="text-center py-8" style={{ color: '#6b7280' }}>読み込み中...</div>
       ) : (
         <div className="space-y-6">
           <Card title="出勤カレンダー">{renderHeatmap()}</Card>
@@ -475,9 +475,9 @@ function AttendanceSummary() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                    <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>氏名</th>
-                    <th className="text-center py-3 px-4 font-bold" style={{ color: '#6b7280' }}>出勤日数</th>
-                    <th className="text-center py-3 px-4 font-bold" style={{ color: '#6b7280' }}>平均勤務時間</th>
+                    <th className="text-left py-3 px-4 font-bold" style={{ color: '#4b5563' }}>氏名</th>
+                    <th className="text-center py-3 px-4 font-bold" style={{ color: '#4b5563' }}>出勤日数</th>
+                    <th className="text-center py-3 px-4 font-bold" style={{ color: '#4b5563' }}>平均勤務時間</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -524,7 +524,7 @@ export default function AnalyticsPage() {
             style={
               section === s.id
                 ? { background: '#faf6ed', color: '#b8963e', border: '1.5px solid #e8dcc3' }
-                : { background: '#f3f4f6', color: '#9ca3af', border: '1.5px solid transparent' }
+                : { background: '#f3f4f6', color: '#6b7280', border: '1.5px solid transparent' }
             }
           >
             <span className="mr-1.5">{s.icon}</span>

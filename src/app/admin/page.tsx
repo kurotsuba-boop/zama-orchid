@@ -171,13 +171,13 @@ function CsvTimecard() {
       <div className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
         <div className="flex items-end gap-3">
           <div>
-            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>年</p>
+            <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>年</p>
             <input type="number" value={year} onChange={(e) => setYear(parseInt(e.target.value) || year)}
               className="w-24 px-3 py-3 rounded-xl text-base text-center focus:outline-none"
               style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
           </div>
           <div>
-            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>月</p>
+            <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>月</p>
             <input type="number" value={month} min={1} max={12} onChange={(e) => setMonth(parseInt(e.target.value) || month)}
               className="w-20 px-3 py-3 rounded-xl text-base text-center focus:outline-none"
               style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
@@ -205,13 +205,13 @@ function CsvPanel({ title, from, to, setFrom, setTo, loading, onDownload }: {
       <div className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
         <div className="flex items-end gap-3">
           <div>
-            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>開始日</p>
+            <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>開始日</p>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
               className="px-3 py-3 rounded-xl text-base focus:outline-none"
               style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
           </div>
           <div>
-            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>終了日</p>
+            <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>終了日</p>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
               className="px-3 py-3 rounded-xl text-base focus:outline-none"
               style={{ border: '1.5px solid #e5e7eb', color: '#1f2937' }} />
@@ -233,7 +233,7 @@ function CsvPanel({ title, from, to, setFrom, setTo, loading, onDownload }: {
 // ── 共通スタイル ──
 const cardStyle = { background: '#ffffff', border: '1px solid #e5e7eb' }
 const goldBtn = { background: '#b8963e', color: '#fff', boxShadow: '0 2px 12px rgba(184,150,62,0.2)' }
-const grayBtn = { background: '#f3f4f6', color: '#6b7280' }
+const grayBtn = { background: '#f3f4f6', color: '#4b5563' }
 
 // ── Toggle Switch ──
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -372,7 +372,7 @@ function MasterPanel({
         <div className="rounded-xl p-5 mb-4" style={{ background: '#faf6ed', border: '1px solid #e8dcc3' }}>
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[200px]">
-              <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>名称</p>
+              <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>名称</p>
               <input
                 value={form.label}
                 onChange={(e) => setForm({ ...form, label: e.target.value })}
@@ -382,7 +382,7 @@ function MasterPanel({
               />
             </div>
             <div className="w-24">
-              <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>表示順</p>
+              <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>表示順</p>
               <input
                 type="number"
                 value={form.display_order}
@@ -416,15 +416,15 @@ function MasterPanel({
         <table className="w-full text-sm">
           <thead className="sticky top-0" style={{ background: '#f9fafb' }}>
             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-              <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>名称</th>
+              <th className="text-left py-3 px-4 font-bold" style={{ color: '#4b5563' }}>名称</th>
               {extraColumns?.map((col) => (
-                <th key={col.key} className="text-center py-3 px-4 font-bold" style={{ color: '#6b7280' }}>
+                <th key={col.key} className="text-center py-3 px-4 font-bold" style={{ color: '#4b5563' }}>
                   {col.label}
                 </th>
               ))}
-              <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>順序</th>
-              <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#6b7280' }}>有効</th>
-              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#6b7280' }}>操作</th>
+              <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#4b5563' }}>順序</th>
+              <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#4b5563' }}>有効</th>
+              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#4b5563' }}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -434,7 +434,7 @@ function MasterPanel({
                 {extraColumns?.map((col) => (
                   <td key={col.key} className="text-center py-3 px-4">{col.render(item)}</td>
                 ))}
-                <td className="text-center py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#6b7280' }}>
+                <td className="text-center py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#4b5563' }}>
                   {item.display_order}
                 </td>
                 <td className="text-center py-3 px-4">
@@ -463,7 +463,7 @@ function MasterPanel({
               </tr>
             ))}
             {items.length === 0 && (
-              <tr><td colSpan={10} className="text-center py-8" style={{ color: '#9ca3af' }}>データがありません</td></tr>
+              <tr><td colSpan={10} className="text-center py-8" style={{ color: '#6b7280' }}>データがありません</td></tr>
             )}
           </tbody>
         </table>
@@ -560,7 +560,7 @@ function EmployeePanel() {
       {notice && (
         <div className="rounded-xl px-4 py-3 mb-4 flex items-start justify-between gap-3" style={{ background: '#faf6ed', border: '1.5px solid #e8dcc3' }}>
           <p className="text-sm font-bold" style={{ color: '#b8963e' }}>✅ {notice}</p>
-          <button onClick={() => setNotice(null)} className="text-sm font-bold flex-shrink-0" style={{ color: '#9ca3af' }}>✕</button>
+          <button onClick={() => setNotice(null)} className="text-sm font-bold flex-shrink-0" style={{ color: '#6b7280' }}>✕</button>
         </div>
       )}
 
@@ -568,7 +568,7 @@ function EmployeePanel() {
         <div className="rounded-xl p-5 mb-4" style={{ background: '#faf6ed', border: '1px solid #e8dcc3' }}>
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>氏名</p>
+              <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>氏名</p>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -578,7 +578,7 @@ function EmployeePanel() {
               />
             </div>
             <div className="w-24">
-              <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>表示順</p>
+              <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>表示順</p>
               <input
                 type="number"
                 value={form.display_order}
@@ -606,17 +606,17 @@ function EmployeePanel() {
         <table className="w-full text-sm">
           <thead className="sticky top-0" style={{ background: '#f9fafb' }}>
             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-              <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>氏名</th>
-              <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#6b7280' }}>順序</th>
-              <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#6b7280' }}>有効</th>
-              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#6b7280' }}>操作</th>
+              <th className="text-left py-3 px-4 font-bold" style={{ color: '#4b5563' }}>氏名</th>
+              <th className="text-center py-3 px-4 font-bold w-20" style={{ color: '#4b5563' }}>順序</th>
+              <th className="text-center py-3 px-4 font-bold w-24" style={{ color: '#4b5563' }}>有効</th>
+              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#4b5563' }}>操作</th>
             </tr>
           </thead>
           <tbody>
             {employees.map((emp) => (
               <tr key={emp.id} style={{ borderBottom: '1px solid #f3f4f6', opacity: emp.is_active ? 1 : 0.5 }}>
                 <td className="py-3 px-4 font-medium" style={{ color: '#1f2937' }}>{emp.name}</td>
-                <td className="text-center py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#6b7280' }}>
+                <td className="text-center py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#4b5563' }}>
                   {emp.display_order}
                 </td>
                 <td className="text-center py-3 px-4">
@@ -730,13 +730,13 @@ function MorningPanel() {
     <div>
       <h3 className="text-lg font-bold mb-4" style={{ color: '#1f2937' }}>朝礼一括登録</h3>
       <div className="rounded-xl p-5 mb-4" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-        <p className="text-sm mb-4" style={{ color: '#6b7280' }}>
+        <p className="text-sm mb-4" style={{ color: '#4b5563' }}>
           指定日に9:00までに出勤している従業員へ、自動で「朝礼 0.25h」を一括登録します。
           同日に既に朝礼が登録されている従業員はスキップされます。
         </p>
         <div className="flex items-end gap-3">
           <div>
-            <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>対象日</p>
+            <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>対象日</p>
             <input
               type="date"
               value={date}
@@ -799,23 +799,23 @@ function ConfirmationUnlockPanel() {
   return (
     <div>
       <h3 className="text-lg font-bold mb-2" style={{ color: '#1f2937' }}>作業確定の解除</h3>
-      <p className="text-sm mb-4" style={{ color: '#6b7280' }}>
+      <p className="text-sm mb-4" style={{ color: '#4b5563' }}>
         確定済みの従業員・日付を解除すると、その作業者は当日分の入力・修正が再びできるようになります。
       </p>
       <div className="rounded-xl overflow-hidden overflow-y-auto" style={{ ...cardStyle, maxHeight: 'calc(100vh - 280px)' }}>
         <table className="w-full text-sm">
           <thead className="sticky top-0" style={{ background: '#f9fafb' }}>
             <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-              <th className="text-left py-3 px-4 font-bold" style={{ color: '#6b7280' }}>氏名</th>
-              <th className="text-left py-3 px-4 font-bold w-40" style={{ color: '#6b7280' }}>確定日</th>
-              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#6b7280' }}>操作</th>
+              <th className="text-left py-3 px-4 font-bold" style={{ color: '#4b5563' }}>氏名</th>
+              <th className="text-left py-3 px-4 font-bold w-40" style={{ color: '#4b5563' }}>確定日</th>
+              <th className="text-center py-3 px-4 font-bold w-32" style={{ color: '#4b5563' }}>操作</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                 <td className="py-3 px-4 font-medium" style={{ color: '#1f2937' }}>{nameOf(row.employee_id)}</td>
-                <td className="py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#6b7280' }}>
+                <td className="py-3 px-4" style={{ fontFamily: "'DM Mono', monospace", color: '#4b5563' }}>
                   {row.confirmed_date}
                 </td>
                 <td className="text-center py-3 px-4">
@@ -830,7 +830,7 @@ function ConfirmationUnlockPanel() {
               </tr>
             ))}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={3} className="text-center py-8" style={{ color: '#9ca3af' }}>確定済みの記録はありません</td></tr>
+              <tr><td colSpan={3} className="text-center py-8" style={{ color: '#6b7280' }}>確定済みの記録はありません</td></tr>
             )}
           </tbody>
         </table>
@@ -876,11 +876,11 @@ function TimeStepPanel() {
   return (
     <div>
       <h3 className="text-lg font-bold mb-2" style={{ color: '#1f2937' }}>時間入力設定</h3>
-      <p className="text-sm mb-4" style={{ color: '#6b7280' }}>
+      <p className="text-sm mb-4" style={{ color: '#4b5563' }}>
         作業報告「対応時間」の分の刻み幅です。変更すると各端末で次回の読み込み以降に反映されます。
       </p>
       <div className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-        <p className="text-xs font-bold mb-2" style={{ color: '#9ca3af' }}>時間入力の刻み（分）</p>
+        <p className="text-xs font-bold mb-2" style={{ color: '#6b7280' }}>時間入力の刻み（分）</p>
         <div className="flex gap-2">
           {[10, 15, 30].map((v) => (
             <button
@@ -932,7 +932,7 @@ export default function AdminPage() {
       className="px-2 py-0.5 rounded-full text-xs font-bold"
       style={cat === 'A'
         ? { background: '#faf6ed', color: '#b8963e', border: '1px solid #e8dcc3' }
-        : { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }
+        : { background: '#f3f4f6', color: '#4b5563', border: '1px solid #e5e7eb' }
       }
     >
       {cat === 'A' ? '仕立て' : 'その他'}
@@ -970,7 +970,7 @@ export default function AdminPage() {
             style={
               section === m.id
                 ? { background: '#faf6ed', color: '#b8963e', border: '1.5px solid #e8dcc3' }
-                : { color: '#6b7280', border: '1.5px solid transparent' }
+                : { color: '#4b5563', border: '1.5px solid transparent' }
             }
           >
             <span>{m.icon}</span>
@@ -997,7 +997,7 @@ export default function AdminPage() {
             extraFields={(form, setForm) => (
               <>
                 <div className="w-32">
-                  <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>カテゴリ</p>
+                  <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>カテゴリ</p>
                   <select
                     value={form.category || 'B'}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -1020,7 +1020,7 @@ export default function AdminPage() {
                         value={!!form[f.key]}
                         onChange={(v) => setForm({ ...form, [f.key]: v })}
                       />
-                      <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#6b7280' }}>
+                      <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#4b5563' }}>
                         {f.label}
                       </span>
                     </div>
@@ -1073,7 +1073,7 @@ export default function AdminPage() {
             ]}
             extraFields={(form, setForm) => (
               <div className="w-32">
-                <p className="text-xs font-bold mb-1" style={{ color: '#9ca3af' }}>種別</p>
+                <p className="text-xs font-bold mb-1" style={{ color: '#6b7280' }}>種別</p>
                 <select
                   value={form.loss_type || 'discard'}
                   onChange={(e) => setForm({ ...form, loss_type: e.target.value })}

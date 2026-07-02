@@ -23,7 +23,7 @@ export default function SuccessOverlay({ emoji, message, onDone }: SuccessOverla
         </p>
         <p
           className="text-base mt-6"
-          style={{ color: '#9ca3af', animation: 'pulse 2s infinite' }}
+          style={{ color: '#6b7280', animation: 'pulse 2s infinite' }}
         >
           タップして戻る
         </p>

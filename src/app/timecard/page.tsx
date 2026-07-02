@@ -159,7 +159,7 @@ export default function TimecardPage() {
               className="text-center rounded-xl py-4"
               style={{ background: '#f5f3ef', border: '1px solid #e5e7eb' }}
             >
-              <p className="text-xs mb-1" style={{ color: '#9ca3af' }}>
+              <p className="text-xs mb-1" style={{ color: '#6b7280' }}>
                 本日の記録
               </p>
               <p
@@ -177,7 +177,7 @@ export default function TimecardPage() {
           >
             <div className="text-center">
               <p className="text-5xl mb-4">⏰</p>
-              <p className="text-lg" style={{ color: '#9ca3af' }}>
+              <p className="text-lg" style={{ color: '#6b7280' }}>
                 名前を選択してください
               </p>
             </div>

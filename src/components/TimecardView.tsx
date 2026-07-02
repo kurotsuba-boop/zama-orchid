@@ -108,10 +108,10 @@ export default function TimecardView({ employeeId }: { employeeId: string }) {
       <div className="flex items-center justify-center h-full" style={{ animation: 'fadeIn 0.3s' }}>
         <div className="text-center">
           <p className="text-6xl mb-4">👤</p>
-          <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+          <p className="text-xl font-semibold" style={{ color: '#6b7280' }}>
             担当者を選択してください
           </p>
-          <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+          <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
             ヘッダーの「担当者を選択」をタップ
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function TimecardView({ employeeId }: { employeeId: string }) {
           className="text-center rounded-xl py-4"
           style={{ background: '#f5f3ef', border: '1px solid #e5e7eb' }}
         >
-          <p className="text-xs mb-1" style={{ color: '#9ca3af' }}>
+          <p className="text-xs mb-1" style={{ color: '#6b7280' }}>
             本日の記録
           </p>
           <p

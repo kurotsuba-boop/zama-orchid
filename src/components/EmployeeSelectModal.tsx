@@ -103,7 +103,7 @@ export default function EmployeeSelectModal({
             <div className="overflow-y-auto flex-1" style={{ maxHeight: '60vh' }}>
               {options.length === 0 ? (
                 isLoadingEmpty ? (
-                  <p className="text-center py-8 text-base" style={{ color: '#9ca3af' }}>
+                  <p className="text-center py-8 text-base" style={{ color: '#6b7280' }}>
                     読み込み中…
                   </p>
                 ) : isErrorEmpty ? (
@@ -111,7 +111,7 @@ export default function EmployeeSelectModal({
                     <p className="text-base mb-1" style={{ color: '#dc2626' }}>
                       担当者の読み込みに失敗しました
                     </p>
-                    <p className="text-xs mb-5" style={{ color: '#9ca3af' }}>
+                    <p className="text-xs mb-5" style={{ color: '#6b7280' }}>
                       通信状況をご確認ください
                     </p>
                     {onRetry && (
@@ -126,7 +126,7 @@ export default function EmployeeSelectModal({
                     )}
                   </div>
                 ) : (
-                  <p className="text-center py-8 text-base" style={{ color: '#9ca3af' }}>
+                  <p className="text-center py-8 text-base" style={{ color: '#6b7280' }}>
                     選択肢がありません
                   </p>
                 )
@@ -166,7 +166,7 @@ export default function EmployeeSelectModal({
               type="button"
               onClick={() => setOpen(false)}
               className="mt-4 w-full py-4 rounded-xl text-base font-bold"
-              style={{ background: '#f3f4f6', color: '#6b7280' }}
+              style={{ background: '#f3f4f6', color: '#4b5563' }}
             >
               キャンセル
             </button>

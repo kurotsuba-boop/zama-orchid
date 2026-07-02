@@ -296,7 +296,7 @@ export default function LossReportPage() {
                         <div key={r.id} className="flex flex-col items-center gap-2">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#dc2626' }} />
-                            <p className="text-base font-semibold" style={{ color: '#6b7280' }}>
+                            <p className="text-base font-semibold" style={{ color: '#4b5563' }}>
                               {r.label}
                             </p>
                           </div>
@@ -320,7 +320,7 @@ export default function LossReportPage() {
                         <div key={r.id} className="flex flex-col items-center gap-2">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#d97706' }} />
-                            <p className="text-base font-semibold" style={{ color: '#6b7280' }}>
+                            <p className="text-base font-semibold" style={{ color: '#4b5563' }}>
                               {r.label}
                             </p>
                           </div>

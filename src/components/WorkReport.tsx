@@ -364,10 +364,10 @@ export default function WorkReport({
       <div className="flex items-center justify-center h-full" style={{ animation: 'fadeIn 0.3s' }}>
         <div className="text-center">
           <p className="text-6xl mb-4">👤</p>
-          <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+          <p className="text-xl font-semibold" style={{ color: '#6b7280' }}>
             担当者を選択してください
           </p>
-          <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+          <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
             ヘッダーの「担当者を選択」をタップ
           </p>
         </div>
@@ -418,11 +418,11 @@ export default function WorkReport({
                     >
                       {Number(r.hours).toFixed(1)}h
                     </span>
-                    <span className="text-xs whitespace-nowrap" style={{ color: '#6b7280' }}>
+                    <span className="text-xs whitespace-nowrap" style={{ color: '#4b5563' }}>
                       {r.location}
                     </span>
                     {extras && (
-                      <span className="text-xs whitespace-nowrap" style={{ color: '#9ca3af' }}>
+                      <span className="text-xs whitespace-nowrap" style={{ color: '#6b7280' }}>
                         {extras}
                       </span>
                     )}
@@ -480,17 +480,17 @@ export default function WorkReport({
             <p className="text-2xl font-bold mb-2" style={{ color: '#b8963e' }}>
               確定済み（変更不可）
             </p>
-            <p className="text-base" style={{ color: '#6b7280' }}>
+            <p className="text-base" style={{ color: '#4b5563' }}>
               <span className="font-bold" style={{ color: '#1f2937' }}>{empName}</span> さんの本日の作業は確定済みです
             </p>
-            <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+            <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
               修正が必要な場合は管理者に解除を依頼してください
             </p>
           </div>
         </div>
       ) : (
       <div className="flex gap-8 flex-1 min-h-0">
-        {/* 左カラム: 入力 + 登録ボタン（下部固定・右カラムから移設） */}
+        {/* 左カラム: 入力（スクロール）＋ 最終確定ボタン（下部固定） */}
         <div className="flex-1 flex flex-col gap-3 min-h-0">
           {/* スクロール領域（日付・作業選択） */}
           <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-y-auto pr-3">
@@ -537,20 +537,6 @@ export default function WorkReport({
           </div>
           </div>
 
-          {/* 登録ボタン（右カラムから左下へ移設: スライダー操作中の誤タップ防止） */}
-          <button
-            disabled={!canSubmit}
-            onClick={() => setShowConfirm(true)}
-            className="py-4 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25 flex-shrink-0"
-            style={{
-              background: canSubmit ? '#b8963e' : '#e5e7eb',
-              boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
-              animation: canSubmit && !editingId ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
-            }}
-          >
-            {editingId ? '更新する' : 'この内容で登録 ✓'}
-          </button>
-
           {/* 最終確定（当日のみ表示。押すと当日分がロックされる） */}
           {date === liveToday && (
             <button
@@ -564,7 +550,7 @@ export default function WorkReport({
           )}
         </div>
 
-        {/* 右カラム: 詳細パネル（入力のみ・登録ボタンは左下へ移設） */}
+        {/* 右カラム: 詳細パネル ＋ 登録ボタン（従来位置に復帰） */}
         <div className="w-[450px] h-full flex flex-col gap-2 flex-shrink-0">
           {workType ? (
             <div
@@ -581,7 +567,7 @@ export default function WorkReport({
               </div>
 
               <div>
-                <p className="text-xs font-bold tracking-[0.15em] uppercase mb-0.5" style={{ color: '#9ca3af' }}>場所</p>
+                <p className="text-xs font-bold tracking-[0.15em] uppercase mb-0.5" style={{ color: '#6b7280' }}>場所</p>
                 <div className="flex flex-wrap gap-1">
                   {locations.map((l) => (
                     <Chip
@@ -642,7 +628,7 @@ export default function WorkReport({
                       { label: '5F以上', value: count5fOver, set: setCount5fOver },
                     ].map((f) => (
                       <div key={f.label} className="flex flex-col items-center">
-                        <p className="text-xs font-bold leading-none" style={{ color: '#9ca3af' }}>{f.label}</p>
+                        <p className="text-xs font-bold leading-none" style={{ color: '#6b7280' }}>{f.label}</p>
                         <div style={{ transform: 'scale(0.8)', transformOrigin: 'top center', height: '38px' }}>
                           <Stepper
                             value={f.value}
@@ -719,13 +705,26 @@ export default function WorkReport({
             >
               <div className="text-center">
                 <p className="text-4xl mb-3">👈</p>
-                <p className="text-base" style={{ color: '#9ca3af' }}>
+                <p className="text-base" style={{ color: '#6b7280' }}>
                   作業内容を選択
                 </p>
               </div>
             </div>
           )}
 
+          {/* 登録ボタン（従来の右カラム下部に復帰） */}
+          <button
+            disabled={!canSubmit}
+            onClick={() => setShowConfirm(true)}
+            className="py-4 rounded-xl text-xl font-bold text-white transition-all active:scale-[0.97] disabled:opacity-25 flex-shrink-0"
+            style={{
+              background: canSubmit ? '#b8963e' : '#e5e7eb',
+              boxShadow: canSubmit ? '0 4px 20px rgba(184,150,62,0.3)' : 'none',
+              animation: canSubmit && !editingId ? 'pulseGlow 1.8s ease-in-out infinite' : undefined,
+            }}
+          >
+            {editingId ? '更新する' : 'この内容で登録 ✓'}
+          </button>
         </div>
       </div>
       )}
@@ -754,13 +753,13 @@ export default function WorkReport({
             <p className="text-xl mb-3" style={{ color: '#1f2937' }}>
               <span className="font-bold text-2xl" style={{ color: '#b8963e' }}>{empName}</span> さん、
             </p>
-            <p className="text-lg mb-2" style={{ color: '#6b7280' }}>これで本日の作業を確定しますか？</p>
-            <p className="text-sm mb-8" style={{ color: '#9ca3af' }}>確定後は本日分の入力・修正ができなくなります（解除は管理者のみ）。</p>
+            <p className="text-lg mb-2" style={{ color: '#4b5563' }}>これで本日の作業を確定しますか？</p>
+            <p className="text-sm mb-8" style={{ color: '#6b7280' }}>確定後は本日分の入力・修正ができなくなります（解除は管理者のみ）。</p>
             <div className="flex gap-4">
               <button
                 onClick={() => setShowFinalizeConfirm(false)}
                 className="flex-1 py-5 rounded-xl text-lg font-bold"
-                style={{ background: '#f3f4f6', color: '#6b7280' }}
+                style={{ background: '#f3f4f6', color: '#4b5563' }}
               >
                 キャンセル
               </button>

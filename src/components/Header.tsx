@@ -101,7 +101,7 @@ export default function Header({
             style={
               activeTab === t.id
                 ? { background: '#b8963e', color: '#fff', boxShadow: '0 2px 12px rgba(184,150,62,0.3)' }
-                : { background: 'transparent', color: '#9ca3af' }
+                : { background: 'transparent', color: '#6b7280' }
             }
           >
             <span className="text-base">{t.icon}</span>
@@ -111,7 +111,7 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="text-xs whitespace-nowrap" style={{ color: '#9ca3af', fontFamily: "'DM Mono', monospace" }}>
+        <div className="text-xs whitespace-nowrap" style={{ color: '#6b7280', fontFamily: "'DM Mono', monospace" }}>
           {clock}
         </div>
         {showSettings && (
@@ -127,7 +127,7 @@ export default function Header({
         <button
           onClick={handleLogout}
           className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 whitespace-nowrap"
-          style={{ background: 'transparent', color: '#9ca3af', border: '1px solid #e5e7eb' }}
+          style={{ background: 'transparent', color: '#6b7280', border: '1px solid #e5e7eb' }}
           title="ログアウト"
         >
           ログアウト

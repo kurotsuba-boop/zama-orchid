@@ -17,7 +17,7 @@ export default function Chip({ label, active, onClick, size = 'md' }: ChipProps)
       style={
         active
           ? { background: '#b8963e', color: '#fff', boxShadow: '0 2px 12px rgba(184,150,62,0.3)' }
-          : { background: '#ffffff', color: '#6b7280', border: '1.5px solid #e5e7eb' }
+          : { background: '#ffffff', color: '#4b5563', border: '1.5px solid #e5e7eb' }
       }
     >
       {label}

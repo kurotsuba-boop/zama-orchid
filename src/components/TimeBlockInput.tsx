@@ -79,7 +79,7 @@ function TimeBlock({
         </span>
       </div>
       <ArrowButton dir="down" onClick={onDown} disabled={downDisabled} />
-      <span className="text-xs font-bold mt-0.5" style={{ color: '#9ca3af' }}>{label}</span>
+      <span className="text-xs font-bold mt-0.5" style={{ color: '#6b7280' }}>{label}</span>
     </div>
   )
 }

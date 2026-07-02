@@ -46,14 +46,14 @@ export default function LoginPage() {
           <h1 className="text-xl font-bold" style={{ color: '#1f2937' }}>
             座間洋ランセンター
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#9ca3af' }}>
+          <p className="text-sm mt-1" style={{ color: '#6b7280' }}>
             作業管理システム
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
-            <label className="text-xs font-bold tracking-widest uppercase mb-1 block" style={{ color: '#9ca3af' }}>
+            <label className="text-xs font-bold tracking-widest uppercase mb-1 block" style={{ color: '#6b7280' }}>
               メールアドレス
             </label>
             <input
@@ -68,7 +68,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-xs font-bold tracking-widest uppercase mb-1 block" style={{ color: '#9ca3af' }}>
+            <label className="text-xs font-bold tracking-widest uppercase mb-1 block" style={{ color: '#6b7280' }}>
               パスワード
             </label>
             <input

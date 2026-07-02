@@ -125,7 +125,7 @@ export default function DatePicker({ value, onChange, placeholder = '日付を�
               <button
                 onClick={prevMonth}
                 className="flex items-center justify-center w-12 h-12 rounded-xl text-xl font-bold active:scale-90 transition-transform"
-                style={{ background: '#f3f4f6', color: '#6b7280' }}
+                style={{ background: '#f3f4f6', color: '#4b5563' }}
               >
                 ◀
               </button>
@@ -138,7 +138,7 @@ export default function DatePicker({ value, onChange, placeholder = '日付を�
               <button
                 onClick={nextMonth}
                 className="flex items-center justify-center w-12 h-12 rounded-xl text-xl font-bold active:scale-90 transition-transform"
-                style={{ background: '#f3f4f6', color: '#6b7280' }}
+                style={{ background: '#f3f4f6', color: '#4b5563' }}
               >
                 ▶
               </button>

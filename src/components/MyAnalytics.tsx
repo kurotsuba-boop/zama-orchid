@@ -71,7 +71,7 @@ function ChipBtn({ active, onClick, children }: { active: boolean; onClick: () =
       style={
         active
           ? { background: GOLD, color: '#fff', boxShadow: '0 2px 8px rgba(184,150,62,0.25)' }
-          : { background: '#f3f4f6', color: '#9ca3af' }
+          : { background: '#f3f4f6', color: '#6b7280' }
       }
     >
       {children}
@@ -82,12 +82,12 @@ function ChipBtn({ active, onClick, children }: { active: boolean; onClick: () =
 function StatCard({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
   return (
     <div className="rounded-2xl p-4 text-center" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-      <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#9ca3af' }}>
+      <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#6b7280' }}>
         {label}
       </p>
       <p className="text-3xl font-bold" style={{ color: GOLD, fontFamily: "'DM Mono', monospace" }}>
         {value}
-        {unit && <span className="text-base ml-1" style={{ color: '#9ca3af' }}>{unit}</span>}
+        {unit && <span className="text-base ml-1" style={{ color: '#6b7280' }}>{unit}</span>}
       </p>
     </div>
   )
@@ -103,20 +103,20 @@ function CompareCard({ label, current, previous, unit }: { label: string; curren
   const arrow = isUp ? '▲' : isDown ? '▼' : '—'
   return (
     <div className="rounded-2xl p-4" style={{ background: '#ffffff', border: '1px solid #e5e7eb' }}>
-      <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#9ca3af' }}>
+      <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#6b7280' }}>
         {label}
       </p>
       <div className="flex items-baseline gap-2">
         <p className="text-2xl font-bold" style={{ color: GOLD, fontFamily: "'DM Mono', monospace" }}>
           {round1(current).toFixed(1)}
-          <span className="text-sm ml-1" style={{ color: '#9ca3af' }}>{unit}</span>
+          <span className="text-sm ml-1" style={{ color: '#6b7280' }}>{unit}</span>
         </p>
         <p className="text-xs font-bold" style={{ color, fontFamily: "'DM Mono', monospace" }}>
           {arrow} {Math.abs(round1(diff)).toFixed(1)}{unit}
           {pct !== null && ` (${pct > 0 ? '+' : ''}${pct}%)`}
         </p>
       </div>
-      <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+      <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
         前期間: {round1(previous).toFixed(1)}{unit}
       </p>
     </div>
@@ -125,7 +125,7 @@ function CompareCard({ label, current, previous, unit }: { label: string; curren
 
 function NoData() {
   return (
-    <div className="text-center py-8 text-sm" style={{ color: '#9ca3af' }}>
+    <div className="text-center py-8 text-sm" style={{ color: '#6b7280' }}>
       データがありません
     </div>
   )
@@ -298,10 +298,10 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
         <div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
           <div className="text-center">
             <p className="text-6xl mb-4">👤</p>
-            <p className="text-xl font-semibold" style={{ color: '#9ca3af' }}>
+            <p className="text-xl font-semibold" style={{ color: '#6b7280' }}>
               担当者を選択してください
             </p>
-            <p className="text-sm mt-2" style={{ color: '#9ca3af' }}>
+            <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
               ヘッダーの「担当者を選択」をタップ
             </p>
           </div>
@@ -332,7 +332,7 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
           <>
             <ChipBtn active={weekSide === 'this'} onClick={() => setWeekSide('this')}>今週</ChipBtn>
             <ChipBtn active={weekSide === 'last'} onClick={() => setWeekSide('last')}>先週</ChipBtn>
-            <span className="text-xs ml-2" style={{ color: '#6b7280', fontFamily: "'DM Mono', monospace" }}>
+            <span className="text-xs ml-2" style={{ color: '#4b5563', fontFamily: "'DM Mono', monospace" }}>
               {rangeLabel}
             </span>
           </>
@@ -341,7 +341,7 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
           <>
             <ChipBtn active={monthSide === 'this'} onClick={() => setMonthSide('this')}>今月</ChipBtn>
             <ChipBtn active={monthSide === 'last'} onClick={() => setMonthSide('last')}>先月</ChipBtn>
-            <span className="text-xs ml-2" style={{ color: '#6b7280', fontFamily: "'DM Mono', monospace" }}>
+            <span className="text-xs ml-2" style={{ color: '#4b5563', fontFamily: "'DM Mono', monospace" }}>
               {rangeLabel}
             </span>
           </>
@@ -350,7 +350,7 @@ export default function MyAnalytics({ employeeId }: { employeeId: string }) {
 
       {/* コンテンツ */}
       {loading ? (
-        <div className="text-center py-12 text-sm" style={{ color: '#9ca3af' }}>
+        <div className="text-center py-12 text-sm" style={{ color: '#6b7280' }}>
           読み込み中...
         </div>
       ) : view === 'personal' ? (
@@ -393,7 +393,7 @@ function ViewTabs({ view, setView }: { view: ViewTab; setView: (v: ViewTab) => v
             style={
               view === v
                 ? { background: '#faf6ed', color: GOLD, border: '1.5px solid #e8dcc3' }
-                : { background: '#f3f4f6', color: '#9ca3af', border: '1.5px solid transparent' }
+                : { background: '#f3f4f6', color: '#6b7280', border: '1.5px solid transparent' }
             }
           >
             {label}
@@ -603,10 +603,10 @@ function WorkHistory({ reports }: { reports: any[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <th className="text-left py-1.5 px-3 font-semibold text-xs" style={{ color: '#9ca3af' }}>作業内容</th>
-                  <th className="text-center py-1.5 px-3 font-semibold text-xs w-20" style={{ color: '#9ca3af' }}>時間</th>
-                  <th className="text-left py-1.5 px-3 font-semibold text-xs w-28" style={{ color: '#9ca3af' }}>場所</th>
-                  <th className="text-left py-1.5 px-3 font-semibold text-xs" style={{ color: '#9ca3af' }}>詳細</th>
+                  <th className="text-left py-1.5 px-3 font-semibold text-xs" style={{ color: '#6b7280' }}>作業内容</th>
+                  <th className="text-center py-1.5 px-3 font-semibold text-xs w-20" style={{ color: '#6b7280' }}>時間</th>
+                  <th className="text-left py-1.5 px-3 font-semibold text-xs w-28" style={{ color: '#6b7280' }}>場所</th>
+                  <th className="text-left py-1.5 px-3 font-semibold text-xs" style={{ color: '#6b7280' }}>詳細</th>
                 </tr>
               </thead>
               <tbody>
@@ -618,8 +618,8 @@ function WorkHistory({ reports }: { reports: any[] }) {
                       <td className="text-center py-2 px-3" style={{ color: GOLD, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
                         {Number(r.hours).toFixed(1)}h
                       </td>
-                      <td className="py-2 px-3 text-xs" style={{ color: '#6b7280' }}>{r.location || '—'}</td>
-                      <td className="py-2 px-3 text-xs" style={{ color: '#9ca3af' }}>{extras || '—'}</td>
+                      <td className="py-2 px-3 text-xs" style={{ color: '#4b5563' }}>{r.location || '—'}</td>
+                      <td className="py-2 px-3 text-xs" style={{ color: '#6b7280' }}>{extras || '—'}</td>
                     </tr>
                   )
                 })}
@@ -640,9 +640,9 @@ function WorkTable({ rows }: { rows: { name: string; hours: number; location: st
     <table className="w-full text-sm">
       <thead>
         <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-          <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>作業</th>
-          <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>時間</th>
-          <th className="text-left py-2 px-3 font-bold w-32" style={{ color: '#6b7280' }}>場所</th>
+          <th className="text-left py-2 px-3 font-bold" style={{ color: '#4b5563' }}>作業</th>
+          <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#4b5563' }}>時間</th>
+          <th className="text-left py-2 px-3 font-bold w-32" style={{ color: '#4b5563' }}>場所</th>
         </tr>
       </thead>
       <tbody>
@@ -652,7 +652,7 @@ function WorkTable({ rows }: { rows: { name: string; hours: number; location: st
             <td className="text-center py-2 px-3" style={{ color: GOLD, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>
               {r.hours.toFixed(1)}h
             </td>
-            <td className="py-2 px-3" style={{ color: '#6b7280' }}>{r.location}</td>
+            <td className="py-2 px-3" style={{ color: '#4b5563' }}>{r.location}</td>
           </tr>
         ))}
         <tr style={{ background: '#faf6ed' }}>
@@ -716,8 +716,8 @@ function OverallContent({
             <table className="w-full text-sm mt-4">
               <thead>
                 <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th className="text-left py-2 px-3 font-bold" style={{ color: '#6b7280' }}>作業内容</th>
-                  <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#6b7280' }}>時間</th>
+                  <th className="text-left py-2 px-3 font-bold" style={{ color: '#4b5563' }}>作業内容</th>
+                  <th className="text-center py-2 px-3 font-bold w-24" style={{ color: '#4b5563' }}>時間</th>
                 </tr>
               </thead>
               <tbody>

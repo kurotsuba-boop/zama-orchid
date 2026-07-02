@@ -44,7 +44,7 @@ export default function SliderInput({
         >
           {decimal > 0 ? value.toFixed(decimal) : value}
         </span>
-        <span className={`${unitCls} ml-1`} style={{ color: '#9ca3af' }}>
+        <span className={`${unitCls} ml-1`} style={{ color: '#6b7280' }}>
           {unit}
         </span>
       </div>
@@ -63,7 +63,7 @@ export default function SliderInput({
         }}
       />
       {showTicks && (
-        <div className="flex justify-between mt-2 text-xs" style={{ color: '#9ca3af' }}>
+        <div className="flex justify-between mt-2 text-xs" style={{ color: '#6b7280' }}>
           {[0, 0.25, 0.5, 0.75, 1].map((r) => (
             <span key={r}>{Math.round(min + (max - min) * r)}</span>
           ))}

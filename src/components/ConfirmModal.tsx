@@ -27,7 +27,7 @@ export default function ConfirmModal({ lines, onOk, onCancel }: ConfirmModalProp
         </p>
         <div className="space-y-2 mb-8">
           {lines.map((l, i) => (
-            <p key={i} className="text-lg" style={{ color: '#6b7280' }}>
+            <p key={i} className="text-lg" style={{ color: '#4b5563' }}>
               {l}
             </p>
           ))}
@@ -36,7 +36,7 @@ export default function ConfirmModal({ lines, onOk, onCancel }: ConfirmModalProp
           <button
             onClick={onCancel}
             className="flex-1 py-5 rounded-xl text-lg font-bold"
-            style={{ background: '#f3f4f6', color: '#6b7280' }}
+            style={{ background: '#f3f4f6', color: '#4b5563' }}
           >
             キャンセル
           </button>
